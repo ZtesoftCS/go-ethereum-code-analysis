@@ -1,6 +1,6 @@
 包trie 实现了Merkle Patricia Tries，这里用简称MTP来称呼这种数据结构，这种数据结构实际上是一种Trie树变种，MPT是以太坊中一种非常重要的数据结构，用来存储用户账户的状态以及状态的变更，用来存储交易信息，用来存储交易的收据信息。MTP实际上是三种数据结构的组合，分别是Trie树， Patricia Trie， 和Merkle树。下面分别介绍这三种数据结构。
 
-##Trie树 (引用介绍 http://dongxicheng.org/structure/trietree/)
+## Trie树 (引用介绍 http://dongxicheng.org/structure/trietree/)
 Trie树，又称字典树，单词查找树或者前缀树，是一种用于快速检索的多叉树结构，如英文字母的字典树是一个26叉树，数字的字典树是一个10叉树。
 
 Trie树可以利用字符串的公共前缀来节约存储空间。如下图所示，该trie树用10个节点保存了6个字符串tea，ten，to，in，inn，int：
@@ -35,7 +35,7 @@ Trie树的基本性质可以归纳为：
 |6c0a8f740d16vcc1|48    |
 
 
-##Merkle树 (参考 http://blog.csdn.net/wo541075754/article/details/54632929）
+## Merkle树 (参考 http://blog.csdn.net/wo541075754/article/details/54632929）
 Merkle Tree，通常也被称作Hash Tree，顾名思义，就是存储hash值的一棵树。Merkle树的叶子是数据块(例如，文件或者文件的集合)的hash值。非叶节点是其对应子节点串联字符串的hash。
 
 ![image](picture/trie_3.png)
@@ -43,7 +43,7 @@ Merkle Tree，通常也被称作Hash Tree，顾名思义，就是存储hash值�
 Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表了整颗树的信息摘要，当树里面任何一个数据发生了变动，都会导致Top Hash的值发生变化。 而Top Hash的值是会存储到区块链的区块头里面去的， 区块头是必须经过工作量证明。 这也就是说我只要拿到一个区块头，就可以对区块信息进行验证。 更加详细的信息请参考那个博客。有详细的介绍。
 
 
-##以太坊的MTP
+## 以太坊的MTP
 每一个以太坊的区块头包含三颗MTP树，分别是
 
 - 交易树
@@ -54,7 +54,7 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 ![image](picture/trie_4.png)
 
 
-##黄皮书形式化定义(Appendix D. Modified Merkle Patricia Tree)
+## 黄皮书形式化定义(Appendix D. Modified Merkle Patricia Tree)
 
 正式地，我们假设输入值J，包含Key Value对的集合（Key Value都是字节数组）：
 ![image](picture/trie_5.png)
@@ -80,9 +80,9 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 
 以类似于基数树的方式，当Trie树从根遍历到叶时，可以构建单个键值对。 Key通过遍历累积，从每个分支节点获取单个半字节（与基数树一样）。 与基数树不同，在共享相同前缀的多个Key的情况下，或者在具有唯一后缀的单个Key的情况下，提供两个优化节点。的情况下，或者在具有唯一后缀的单个密钥的情况下，提供两个优化节点。 因此，当遍历时，可能从其他两个节点类型，扩展和叶中的每一个潜在地获取多个半字节。在Trie树中有三种节点：
 
-- **叶子节点(Leaf):**叶子节点包含两个字段， 第一个字段是剩下的Key的半字节编码,而且半字节编码方法的第二个参数为true， 第二个字段是Value
-- **扩展节点(Extention):**扩展节点也包含两个字段， 第一个字段是剩下的Key的可以至少被两个剩下节点共享的部分的半字节编码，第二个字段是n(J,j)
-- **分支节点(Branch):**分支节点包含了17个字段，其前16个项目对应于这些点在其遍历中的键的十六个可能的半字节值中的每一个。第17个字段是存储那些在当前结点结束了的节点(例如， 有三个key,分别是 (abc ,abd, ab) 第17个字段储存了ab节点)
+- **叶子节点(Leaf):** 叶子节点包含两个字段， 第一个字段是剩下的Key的半字节编码,而且半字节编码方法的第二个参数为true， 第二个字段是Value
+- **扩展节点(Extention):** 扩展节点也包含两个字段， 第一个字段是剩下的Key的可以至少被两个剩下节点共享的部分的半字节编码，第二个字段是n(J,j)
+- **分支节点(Branch):** 分支节点包含了17个字段，其前16个项目对应于这些点在其遍历中的键的十六个可能的半字节值中的每一个。第17个字段是存储那些在当前结点结束了的节点(例如， 有三个key,分别是 (abc ,abd, ab) 第17个字段储存了ab节点)
 
 分支节点只有在需要的时候使用， 对于一个只有一个非空 key value对的Trie树，可能不存在分支节点。 如果使用公式来定义这三种节点， 那么公式如下：
 图中的HP函数代表Hex-Prefix Encoding，是一种半字节编码格式，RLP是使用RLP进行序列化的函数。
@@ -99,7 +99,7 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 
 对于数据应该如何存储和不应该如何存储， 黄皮书中说明没有显示的定义。所以这是一个实现上的问题。我们简单的定义了一个函数来把J映射为一个Hash。 我们认为对于任意一个J，只存在唯一一个Hash值。
 
-###黄皮书的形式化定义(Hex-Prefix Encoding)--十六进制前缀编码
+### 黄皮书的形式化定义(Hex-Prefix Encoding)--十六进制前缀编码
 十六进制前缀编码是将任意数量的半字节编码为字节数组的有效方法。它能够存储附加标志，当在Trie树中使用时(唯一会使用的地方)，会在节点类型之间消除歧义。
 
 它被定义为从一系列半字节（由集合Y表示）与布尔值一起映射到字节序列（由集合B表示）的函数HP：
@@ -382,7 +382,7 @@ Trie树的Get方法，基本上就是很简单的遍历Trie树，来获取Key的
 
 Trie树的Delete方法，暂时不介绍，代码根插入比较类似
 
-###Trie树的序列化和反序列化
+### Trie树的序列化和反序列化
 序列化主要是指把内存表示的数据存放到数据库里面， 反序列化是指把数据库里面的Trie数据加载成内存表示的数据。 序列化的目的主要是方便存储，减少存储大小等。 反序列化的目的是把存储的数据加载到内存，方便Trie树的插入，查询，修改等需求。
 
 Trie的序列化主要才作用了前面介绍的Compat Encoding和 RLP编码格式。 序列化的结构在黄皮书里面有详细的介绍。
@@ -698,7 +698,7 @@ decodeFull方法。根decodeShort方法的流程差不多。
 	}
 
 
-###Trie树的cache管理
+### Trie树的cache管理
 Trie树的cache管理。 还记得Trie树的结构里面有两个参数， 一个是cachegen,一个是cachelimit。这两个参数就是cache控制的参数。 Trie树每一次调用Commit方法，会导致当前的cachegen增加1。
 	
 	func (t *Trie) CommitTo(db DatabaseWriter) (root common.Hash, err error) {
@@ -760,7 +760,7 @@ canUnload方法是一个接口，不同的node调用不同的方法。
 	func (n hashNode) cache() (hashNode, bool)   { return nil, true }
 	func (n valueNode) cache() (hashNode, bool)  { return nil, true }
 
-###proof.go Trie树的默克尔证明
+### proof.go Trie树的默克尔证明
 主要提供两个方法，Prove方法获取指定Key的proof证明， proof证明是从根节点到叶子节点的所有节点的hash值列表。 VerifyProof方法，接受一个roothash值和proof证明和key来验证key是否存在。
 
 Prove方法，从根节点开始。把经过的节点的hash值一个一个存入到list中。然后返回。
@@ -889,7 +889,7 @@ VerifyProof方法，接收一个rootHash参数，key参数，和proof数组， �
 	}
 
 
-###security_trie.go 加密的Trie
+### security_trie.go 加密的Trie
 为了避免刻意使用很长的key导致访问时间的增加， security_trie包装了一下trie树， 所有的key都转换成keccak256算法计算的hash值。同时在数据库里面存储hash值对应的原始的key。
 
 	type SecureTrie struct {
