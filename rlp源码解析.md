@@ -55,7 +55,7 @@ RLP是Recursive Length Prefix的简写。是以太坊中的序列化方法，以
 
 RLP把所有的数据看成两类数据的组合， 一类是字节数组， 一类是类似于List的数据结构。 我理解这两类基本包含了所有的数据结构。 比如用得比较多的struct。 可以看成是一个很多不同类型的字段组成的List
 
-## go ethereum源码解析
+##  go-ethereum源码解析
 因为go ethereum是最被广泛使用的以太坊客户端， 所以后续的源码分析都从github上面的这份代码进行分析。 然后我使用的是windows 10 64位的环境。
 
 ### 搭建go ethereum调试环境
