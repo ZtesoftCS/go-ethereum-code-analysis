@@ -55,6 +55,7 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 
 
 ##黄皮书形式化定义(Appendix D. Modified Merkle Patricia Tree)
+
 正式地，我们假设输入值J，包含Key Value对的集合（Key Value都是字节数组）：
 ![image](picture/trie_5.png)
 
