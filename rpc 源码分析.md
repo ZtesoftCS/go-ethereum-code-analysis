@@ -396,7 +396,9 @@ ServeCodec, 这个方法很简单，提供了codec.Close的关闭功能。 serve
 					codec.Write(codec.CreateErrorResponse(nil, err))
 				}
 				// Error or end of stream, wait for requests and tear down
-				//这里主要是考虑多线程处理的时候等待所有的request处理完毕，每启动一个go线程会调用pend.Add(1)。 处理完成后调用pend.Done()会减去1。当为0的时候，Wait()方法就会返回。
+				//这里主要是考虑多线程处理的时候等待所有的request处理完毕，
+				//每启动一个go线程会调用pend.Add(1)。 
+				//处理完成后调用pend.Done()会减去1。当为0的时候，Wait()方法就会返回。
 				pend.Wait()
 				return nil
 			}
@@ -667,7 +669,8 @@ handle方法，执行一个request，然后返回response
 
 我们在serveRequest的代码中，就有这样的代码。 
 
-	如果codec支持, 可以通过一个叫notifier的对象执行回调函数发送消息给客户端。他和codec/connection关系很紧密。 如果连接被关闭，那么notifier会关闭，并取消掉所有激活的订阅。
+	如果codec支持, 可以通过一个叫notifier的对象执行回调函数发送消息给客户端。
+	他和codec/connection关系很紧密。 如果连接被关闭，那么notifier会关闭，并取消掉所有激活的订阅。
 	// if the codec supports notification include a notifier that callbacks can use
 	// to send notification to clients. It is thight to the codec/connection. If the
 	// connection is closed the notifier will stop and cancels all active subscriptions.
@@ -790,7 +793,9 @@ createSubscription方法会调用指定的注册上来的方法，并得到回�
 		// writeConn is only safe to access outside dispatch, with the
 		// write lock held. The write lock is taken by sending on
 		// requestOp and released by sending on sendDone.
-		//通过这里的注释可以看到，writeConn是调用这用来写入请求的网络连接对象，只有在dispatch方法外面调用才是安全的，而且需要通过给requestOp队列发送请求来获取锁，获取锁之后就可以把请求写入网络，写入完成后发送请求给sendDone队列来释放锁，供其它的请求使用。
+		//通过这里的注释可以看到，writeConn是调用这用来写入请求的网络连接对象，
+		//只有在dispatch方法外面调用才是安全的，而且需要通过给requestOp队列发送请求来获取锁，
+		//获取锁之后就可以把请求写入网络，写入完成后发送请求给sendDone队列来释放锁，供其它的请求使用。
 		writeConn net.Conn
 	
 		// for dispatch
@@ -1018,7 +1023,8 @@ dispatch方法
 			// Send path.
 			case op := <-requestOpLock:
 				// Stop listening for further send ops until the current one is done.
-				//接收到一个requestOp消息，那么设置requestOpLock为空，这个时候如果有其他人也希望发送op到requestOp，会因为没有人处理而阻塞。
+				//接收到一个requestOp消息，那么设置requestOpLock为空，
+				//这个时候如果有其他人也希望发送op到requestOp，会因为没有人处理而阻塞。
 				requestOpLock = nil
 				lastOp = op
 				//把这个op加入等待队列。
@@ -1084,7 +1090,10 @@ dispatch方法
 	// before considering the subscriber dead. The subscription Err channel will receive
 	// ErrSubscriptionQueueOverflow. Use a sufficiently large buffer on the channel or ensure
 	// that the channel usually has at least one reader to prevent this issue.
-	//Subscribe会使用传入的参数调用"<namespace>_subscribe"方法来订阅指定的消息。 服务器的通知会写入channel参数指定的队列。 channel参数必须和返回的类型相同。 ctx参数可以用来取消RPC的请求，但是如果订阅已经完成就不会有效果了。 处理速度太慢的订阅者的消息会被删除，每个客户端有8000个消息的缓存。
+	//Subscribe会使用传入的参数调用"<namespace>_subscribe"方法来订阅指定的消息。 
+	//服务器的通知会写入channel参数指定的队列。 channel参数必须和返回的类型相同。 
+	//ctx参数可以用来取消RPC的请求，但是如果订阅已经完成就不会有效果了。 
+	//处理速度太慢的订阅者的消息会被删除，每个客户端有8000个消息的缓存。
 	func (c *Client) Subscribe(ctx context.Context, namespace string, channel interface{}, args ...interface{}) (*ClientSubscription, error) {
 		// Check type of channel first.
 		chanVal := reflect.ValueOf(channel)
