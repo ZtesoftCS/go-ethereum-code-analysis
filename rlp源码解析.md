@@ -59,16 +59,16 @@ RLP把所有的数据看成两类数据的组合， 一类是字节数组， 一
 ### RLP源码解析
 RLP的源码不是很多， 主要分了三个文件 
 
-	decode.go					解码器，把RLP数据解码为go的数据结构
-	decode_tail_test.go			解码器测试代码
-	decode_test.go				解码器测试代码	
-	doc.go						文档代码
-	encode.go					编码器，把GO的数据结构序列化为字节数组
-	encode_test.go				编码器测试
+	decode.go			解码器，把RLP数据解码为go的数据结构
+	decode_tail_test.go		解码器测试代码
+	decode_test.go			解码器测试代码	
+	doc.go				文档代码
+	encode.go			编码器，把GO的数据结构序列化为字节数组
+	encode_test.go			编码器测试
 	encode_example_test.go
-	raw.go						未解码的RLP数据
+	raw.go				未解码的RLP数据
 	raw_test.go
-	typecache.go				类型缓存， 类型缓存记录了类型->(编码器|解码器)的内容。
+	typecache.go			类型缓存， 类型缓存记录了类型->(编码器|解码器)的内容。
 
 
 #### 如何根据类型找到对应的编码器和解码器 typecache.go
@@ -83,7 +83,7 @@ RLP的源码不是很多， 主要分了三个文件
 我们首先看看核心数据结构
 
 	var (
-		typeCacheMutex sync.RWMutex               //读写锁，用来在多线程的时候保护typeCache这个Map
+		typeCacheMutex sync.RWMutex                  //读写锁，用来在多线程的时候保护typeCache这个Map
 		typeCache      = make(map[typekey]*typeinfo) //核心数据结构，保存了类型->编解码器函数
 	)
 	type typeinfo struct { //存储了编码器和解码器函数
