@@ -5,7 +5,7 @@
 ### 搭建go ethereum调试环境
 首先下载go安装包进行安装，因为GO的网站被墙，所以从下面地址下载。
 
-	https://studygolang.com/dl/golang/go1.9.1.windows-amd64.msi
+	[https://studygolang.com/dl/golang/go1.9.1.windows-amd64.msi](https://studygolang.com/dl/golang/go1.9.1.windows-amd64.msi)
 
 安装好之后，设置环境变量，把C:\Go\bin目录添加到你的PATH环境变量， 然后增加一个GOPATH的环境变量，GOPATH的值设置为你的GO语言下载的代码路径(我设置的是C:\GOPATH)
 
@@ -17,11 +17,19 @@
 	
 	go get github.com/ethereum/go-ethereum
 
-命令执行成功之后，代码就会下载到下面这个目录，GOPATH\src\github.com\ethereum\go-ethereum
+命令执行成功之后，代码就会下载到下面这个目录，%GOPATH%\src\github.com\ethereum\go-ethereum
+如果执行过程中出现
 
-下面安装IDE工具。 我是用的IDE是JetBrains的Gogland。 可以在下面地址下载
+	# github.com/ethereum/go-ethereum/crypto/secp256k1
+	exec: "gcc": executable file not found in %PATH%
 
-	https://download.jetbrains.com/go/gogland-173.2696.28.exe
+则需要安装gcc工具，我们从下面地址下载并安装
+
+	[http://tdm-gcc.tdragon.net/download](http://tdm-gcc.tdragon.net/download)
+
+接下来安装IDE工具。 我是用的IDE是JetBrains的Gogland。 可以在下面地址下载
+
+	[https://download.jetbrains.com/go/gogland-173.2696.28.exe](https://download.jetbrains.com/go/gogland-173.2696.28.exe)
 
 安装完成后打开IDE. 选择File -> Open -> 选择GOPATH\src\github.com\ethereum\go-ethereum目录打开。
 
