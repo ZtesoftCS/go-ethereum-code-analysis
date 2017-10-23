@@ -17,9 +17,17 @@
 	
 	go get github.com/ethereum/go-ethereum
 
-命令执行成功之后，代码就会下载到下面这个目录，GOPATH\src\github.com\ethereum\go-ethereum
+命令执行成功之后，代码就会下载到下面这个目录，%GOPATH%\src\github.com\ethereum\go-ethereum
+如果执行过程中出现
 
-下面安装IDE工具。 我是用的IDE是JetBrains的Gogland。 可以在下面地址下载
+	# github.com/ethereum/go-ethereum/crypto/secp256k1
+	exec: "gcc": executable file not found in %PATH%
+
+则需要安装gcc工具，我们从下面地址下载并安装
+
+	http://tdm-gcc.tdragon.net/download
+
+接下来安装IDE工具。 我是用的IDE是JetBrains的Gogland。 可以在下面地址下载
 
 	https://download.jetbrains.com/go/gogland-173.2696.28.exe
 
