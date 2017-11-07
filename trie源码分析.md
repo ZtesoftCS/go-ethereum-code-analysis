@@ -15,14 +15,10 @@ Trie树的基本性质可以归纳为：
 - 从根节点到某一个节点，路径上经过的字符连接起来，为该节点对应的字符串。
 - 每个节点的所有子节点包含的字符串不相同。
 
-
 ## Patricia Tries (前缀树)
 前缀树根Trie树的不同之处在于Trie树给每一个字符串分配一个节点，这样如果很多很长的，又没有公共节点的字符串就会导致Trie树退化成一个数组。在以太坊里面会由黑客构造很多这种节点造成拒绝服务攻击。前缀树的不同之处在于如果节点公共前缀，那么就使用公共前缀，否则就把剩下的所有节点插入同一个节点。Patricia相对Tire的优化正如下图：
-
 ![Optimization of Tire to Patricia](picture/patricia_tire.png)
-
 ![image](picture/trie_2.png)
-
 上图存储的8个Key Value对，可以看到前缀树的特点。
 
 |Key           | value |
@@ -52,11 +48,10 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 - 收据树(交易执行过程中的一些数据)
 - 状态树(账号信息， 合约账户和用户账户)
 
-结构总览为
-![world state trie](picture/worldstatetrie.png)
 下图中是两个区块头，其中state root，tx root receipt root分别存储了这三棵树的树根，第二个区块显示了当账号 175的数据变更(27 -> 45)的时候，只需要存储跟这个账号相关的部分数据，而且老的区块中的数据还是可以正常访问。(这个有点类似与函数式编程语言中的不可变的数据结构的实现)
 ![image](picture/trie_4.png)
-
+详细结构为
+![world state trie](picture/worldstatetrie.png)
 
 ## 黄皮书形式化定义(Appendix D. Modified Merkle Patricia Tree)
 
