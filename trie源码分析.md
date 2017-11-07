@@ -17,8 +17,11 @@ Trie树的基本性质可以归纳为：
 
 ## Patricia Tries (前缀树)
 前缀树根Trie树的不同之处在于Trie树给每一个字符串分配一个节点，这样如果很多很长的，又没有公共节点的字符串就会导致Trie树退化成一个数组。在以太坊里面会由黑客构造很多这种节点造成拒绝服务攻击。前缀树的不同之处在于如果节点公共前缀，那么就使用公共前缀，否则就把剩下的所有节点插入同一个节点。Patricia相对Tire的优化正如下图：
+
 ![Optimization of Tire to Patricia](picture/patricia_tire.png)
+
 ![image](picture/trie_2.png)
+
 上图存储的8个Key Value对，可以看到前缀树的特点。
 
 |Key           | value |
@@ -31,7 +34,6 @@ Trie树的基本性质可以归纳为：
 |6c0a8f743b95jx5R|2     |
 |6c0a8f740d16y03G|43    |
 |6c0a8f740d16vcc1|48    |
-
 
 ## Merkle树 (参考 http://blog.csdn.net/wo541075754/article/details/54632929）
 Merkle Tree，通常也被称作Hash Tree，顾名思义，就是存储hash值的一棵树。Merkle树的叶子是数据块(例如，文件或者文件的集合)的hash值。非叶节点是其对应子节点串联字符串的hash。
@@ -62,11 +64,11 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 
 ![image](picture/trie_6.png)
 
-对于任何特定的字节，我们可以表示为对应的半字节，
+对于任何特定的字节，我们可以表示为对应的半字节（nibble），其中Y集合在Hex-Prefix Encoding中有说明，意为半字节（4bit）集合（之所以采用半字节，其与后续说明的分支节点branch node结构以及key中编码flag有关）
 
 ![image](picture/trie_7.png)
 
-我们定义了TRIE函数，用来表示树根的HASH值。
+我们定义了TRIE函数，用来表示树根的HASH值（其中c函数的第二个参数，意为构建完成后树的层数。root的值为0）
 
 ![image](picture/trie_8.png)
 
@@ -936,5 +938,3 @@ VerifyProof方法，接收一个rootHash参数，key参数，和proof数组， �
 		}
 		return t.trie.CommitTo(db)
 	}
-
-
