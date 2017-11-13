@@ -1,3 +1,5 @@
+翻译内容来自 ( [https://github.com/ethereum/go-ethereum/pull/1889](https://github.com/ethereum/go-ethereum/pull/1889) )
+
 This PR aggregates a lot of small modifications to core, trie, eth and other packages to collectively implement the eth/63 fast synchronization algorithm. In short, geth --fast.
 
 这个提交请求包含了对core，trie,eth和其他一些package的微小的修改，来共同实现eth/63的快速同步算法。 简单来说， geth --fast.
