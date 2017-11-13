@@ -16,7 +16,7 @@ fetcher部分的源码分析
 
 downloader 部分源码分析
 	
-- [节点快速同步算法 ](以太坊fast sync算法.md)
+- [节点快速同步算法](以太坊fast%20sync算法.md)
 - [用来提供下载任务的调度和结果组装 queue.go](eth-downloader-queue.go源码分析.md)
 - [用来代表对端，提供QoS等功能 peer.go](eth-downloader-peer源码分析.md)
 - [快速同步算法 用来提供Pivot point的 state-root的同步 statesync.go](eth-downloader-statesync.md)
