@@ -28,5 +28,6 @@
 		- [交易执行和处理部分源码分析](/core-txpool交易池源码分析.md)
 	- [创世区块的源码分析](/core-genesis创世区块源码分析.md)
 	- [blockchain 源码分析](/core-blockchain源码分析.md)
+- [miner挖矿部分源码分析CPU挖矿](/miner挖矿部分源码分析CPU挖矿.md)
 
 
