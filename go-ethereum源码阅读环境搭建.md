@@ -1,8 +1,10 @@
 
 ##  go-ethereum源码解析
-因为go ethereum是最被广泛使用的以太坊客户端， 所以后续的源码分析都从github上面的这份代码进行分析。 然后我使用的是windows 10 64位的环境。
+因为go ethereum是最被广泛使用的以太坊客户端， 所以后续的源码分析都从github上面的这份代码进行分析。 
 
 ### 搭建go ethereum调试环境
+
+#### windows 10 64bit
 首先下载go安装包进行安装，因为GO的网站被墙，所以从下面地址下载。
 
 	https://studygolang.com/dl/golang/go1.9.1.windows-amd64.msi
@@ -36,6 +38,32 @@
 然后打开go-ethereum/rlp/decode_test.go. 在编辑框右键选择运行， 如果运行成功，代表环境搭建完成。
 
 ![image](https://raw.githubusercontent.com/wugang33/go-ethereum-code-analysis/master/picture/go_env_2.png)
+
+### Ubuntu 16.04 64bit
+ 
+go安装包进行安装
+
+	apt install golang-go git -y
+
+golang环境配置：
+
+	编辑/etc/profile文件，在该文件中加入以下内容：
+	export GOROOT=/usr/bin/go  
+	export GOPATH=/root/home/goproject
+	export GOBIN=/root/home/goproject/bin
+	export GOLIB=/root/home/goproject/
+	export PATH=$PATH:$GOBIN:$GOPATH/bin:$GOROOT/bin
+执行以下命令，使得环境变量生效：<br/>
+	
+	# source /etc/profile
+
+下载源码：
+	
+	#cd  /root/home/goproject; mkdir src； cd src  #进入go项目目录，并创建src目录, 并进入src目录
+	#git clone https://github.com/ethereum/go-ethereum
+
+使用vim或其他IDE打开即可；
+
 
 ### go ethereum 目录大概介绍
 go-ethereum项目的组织结构基本上是按照功能模块划分的目录，下面简单介绍一下各个目录的结构，每个目录在GO语言里面又被成为一个Package,我理解跟Java里面的Package应该是差不多的意思。
