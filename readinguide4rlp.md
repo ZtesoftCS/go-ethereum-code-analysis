@@ -10,7 +10,7 @@
 	func TestEncode(t *testing.T) {
 		runEncTests(t, func(val interface{}) ([]byte, error) {
 			b := new(bytes.Buffer)
-			[err := Encode(b, val)](https://github.com/ethereum/go-ethereum/blob/master/rlp/encode_test.go#L275)
+			err := Encode(b, val)
 			return b.Bytes(), err
 		})
 	}
