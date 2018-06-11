@@ -33,8 +33,7 @@
 ![image](picture/sign_placeholder_2.png) 代表这个对象被修改后的值
 ![image](picture/sign_placeholder_3.png) 中间状态
 ![image](picture/sign_placeholder_4.png) 中间状态2
-
-![image](picture/sign_func_1.png) ![image](picture/sign_func_2.png) 如果前面的f代表了一个函数， 那么后面的f*代表了一个相识的函数，不过是对内部的元素依次执行f的一个函数。
+![image](picture/sign_func_1.png) ![image](picture/sign_func_2.png) 如果前面的f代表了一个函数， 那么后面的f*代表了一个相似的函数，不过是对内部的元素依次执行f的一个函数。
 
 ![image](picture/sign_last_item.png)  代表了列表里面的最后一个元素
 ![image](picture/sign_last_item_1.png)  代表了列表里面的最后一个元素 
