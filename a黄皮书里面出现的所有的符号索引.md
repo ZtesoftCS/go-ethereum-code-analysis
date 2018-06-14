@@ -1,16 +1,27 @@
 
 
 ![image](picture/sign_state_1.png)
-![image](picture/sign_state_3.png)是t+1时刻的状态(account trie).
-![image](picture/sign_state_4.png)是状态转换函数，也可以理解为执行引擎
-![image](picture/sign_state_5.png) 是transaction。 一次交易。
+
+![image](picture/sign_state_3.png)是t+1时刻的状态(account trie)。
+
+![image](picture/sign_state_4.png)是状态转换函数，也可以理解为执行引擎。
+
+![image](picture/sign_state_5.png) 是transaction，一次交易。
+
 ![image](picture/sign_state_6.png)
+
 ![image](picture/sign_state_7.png)  是区块级别的状态转换函数。
-![image](picture/sign_state_8.png)  B是区块，由很多交易组成。
-![image](picture/sign_state_9.png)  0号位置的交易
-![image](picture/sign_state_10.png) 其中Ω是块终结状态转换函数（一个奖励挖矿者的函数）
-![image](picture/sign_ether.png) Ether的标识
-![image](picture/sign_ether_value.png) Ether的价值
+
+![image](picture/sign_state_8.png)  是区块，由很多交易组成。
+
+![image](picture/sign_state_9.png)  0号位置的交易。
+
+![image](picture/sign_state_10.png) 是块终结状态转换函数（一个奖励挖矿者的函数）。
+
+![image](picture/sign_ether.png) Ether的标识。
+
+![image](picture/sign_ether_value.png) Ethereum中所用到的各种单位与Wei的换算关系（例如：一个Finney对应10^15个Wei）。
+
 ![image](picture/sign_machine_state.png) machine-state
 
 ## 一些基本的规则
@@ -33,11 +44,10 @@
 ![image](picture/sign_placeholder_2.png) 代表这个对象被修改后的值
 ![image](picture/sign_placeholder_3.png) 中间状态
 ![image](picture/sign_placeholder_4.png) 中间状态2
-
-![image](picture/sign_func_1.png) ![image](picture/sign_func_2.png) 如果前面的f代表了一个函数， 那么后面的f*代表了一个相识的函数，不过是对内部的元素依次执行f的一个函数。
+![image](picture/sign_func_1.png) ![image](picture/sign_func_2.png) 如果前面的f代表了一个函数， 那么后面的f*代表了一个相似的函数，不过是对内部的元素依次执行f的一个函数。
 
 ![image](picture/sign_last_item.png)  代表了列表里面的最后一个元素
-![image](picture/sign_last_item_1.png)  代表了列表里面的最后一个元素 
+![image](picture/sign_last_item_1.png)  代表了列表里面的最后一个元素
 ![image](picture/sign_seq_item.png)   求x的长度
 
 
@@ -47,7 +57,7 @@
 ![image](picture/sign_state_code.png) Code的hash。 如果code是b 那么KEC(b)===这个hash
 
 
-![image](picture/sign_l1.png) 
+![image](picture/sign_l1.png)
 
 ![image](picture/sign_ls.png)  world state collapse function
 ![image](picture/sign_pa.png)
@@ -70,7 +80,7 @@
 
 ![image](picture/sign_t_ti.png) 合约的初始化代码
 ![image](picture/sign_t_data.png) 方法调用的入参
-![image](picture/sign_t_lt.png) 
+![image](picture/sign_t_lt.png)
 
 ## 区块头
 
