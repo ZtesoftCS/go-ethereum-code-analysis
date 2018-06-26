@@ -10,7 +10,7 @@ p2p包实现了通用的p2p网络协议。包括节点的查找，节点状态�
 
 之前我们分析了ethdb的代码和trie的代码，trie的持久化工作使用了leveldb。 这里同样也使用了leveldb。 不过p2p的leveldb实例和主要的区块链的leveldb实例不是同一个。
 
-newNodeDB,根据参数path来看打开基于文件的数据库，还是基于文件的数据库。
+newNodeDB,根据参数path来看打开基于内存的数据库，还是基于文件的数据库。
 
 	// newNodeDB creates a new node database for storing and retrieving infos about
 	// known peers in the network. If no path is given, an in-memory, temporary
