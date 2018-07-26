@@ -720,7 +720,15 @@ commitTransactions
 		var coalescedLogs []*types.Log
 	
 		for {
+			// If we don't have enough gas for any further transactions then we're done
+			// 如果当前区块中所有 Gas 消耗已经使用完，则退出打包交易
+			if env.gasPool.Gas() < params.TxGas {
+				log.Trace("Not enough gas for further transactions", "have", env.gasPool, "want", params.TxGas)
+				break
+			}
+					
 			// Retrieve the next transaction and abort if all done
+			// 检索下一笔交易，如果交易集合为空则退出 commit
 			tx := txs.Peek()
 			if tx == nil {
 				break
