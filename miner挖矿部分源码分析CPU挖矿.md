@@ -444,7 +444,11 @@ worker
 	
 		coinbase common.Address					// 挖矿者的地址
 		extra    []byte							// 
-	
+		
+		snapshotMu    sync.RWMutex				// 快照 RWMutex（快照读写锁）
+		snapshotBlock *types.Block				// 快照 Block
+		snapshotState *state.StateDB				// 快照 StateDB
+		
 		currentMu sync.Mutex
 		current   *Work
 	
@@ -708,7 +712,10 @@ makeCurrent，未当前的周期创建一个新的环境。
 commitTransactions
 	
 	func (env *Work) commitTransactions(mux *event.TypeMux, txs *types.TransactionsByPriceAndNonce, bc *core.BlockChain, coinbase common.Address) {
-		gp := new(core.GasPool).AddGas(env.header.GasLimit)
+		// 由于是打包新的区块中交易，所以将总 gasPool 初始化为 env.header.GasLimit
+		if env.gasPool == nil {
+			env.gasPool = new(core.GasPool).AddGas(env.header.GasLimit)
+		}
 	
 		var coalescedLogs []*types.Log
 	
