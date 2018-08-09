@@ -59,7 +59,7 @@ levelDB官方网站介绍的特点
 		Write() error
 	}
 
-## memory_database.g
+## memory_database.go
 这个基本上就是封装了一个内存的Map结构。然后使用了一把锁来对多线程进行资源的保护。
 
 	type MemDatabase struct {
