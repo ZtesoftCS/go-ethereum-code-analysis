@@ -1,4 +1,4 @@
-go-ethereum所有的数据存储在levelDB这个Google开源的KeyValue文件数据库中，整个区块链的所有数据都存储在一个levelDB的数据库中，levelDB支持按照文件大小切分文件的功能，所以我们看到的区块链的数据都是一个一个小文件，其实这些小文件都是一个同一个levelDB实例。这里简单的看下levelDB的go封装代码。
+go-ethereum所有的数据存储在levelDB这个Google开源的KeyValue文件数据库中，整个区块链的所有数据都存储在一个levelDB的数据库中，levelDB支持按照文件大小切分文件的功能，所以我们看到的区块链的数据都是一个一个小文件，其实这些小文件都是同一个levelDB实例。这里简单的看下levelDB的go封装代码。
 
 levelDB官方网站介绍的特点
 
@@ -59,7 +59,7 @@ levelDB官方网站介绍的特点
 		Write() error
 	}
 
-## memory_database.g
+## memory_database.go
 这个基本上就是封装了一个内存的Map结构。然后使用了一把锁来对多线程进行资源的保护。
 
 	type MemDatabase struct {
@@ -112,7 +112,7 @@ levelDB官方网站介绍的特点
 	}
 
 
-##database.go
+## database.go
 这个就是实际ethereum客户端使用的代码， 封装了levelDB的接口。 
 
 	
@@ -203,7 +203,7 @@ levelDB官方网站介绍的特点
 		return db.db.Has(key, nil)
 	}
 
-###Metrics的处理
+### Metrics的处理
 之前在创建NewLDBDatabase的时候，并没有初始化内部的很多Mertrics，这个时候Mertrics是为nil的。初始化Mertrics是在Meter方法中。外部传入了一个prefix参数，然后创建了各种Mertrics(具体如何创建Merter，会后续在Meter专题进行分析),然后创建了quitChan。 最后启动了一个线程调用了db.meter方法。
 	
 	// Meter configures the database metrics collectors and
