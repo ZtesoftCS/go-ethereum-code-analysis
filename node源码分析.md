@@ -283,46 +283,38 @@ startRPC,这个方法收集所有的apis。 并依次调用启动各个RPC服务
 	}
 
 
-startXXX 是具体的RPC的启动。 流程都是大同小异。 这里就只看startWS了
+startXXX 是具体的RPC的启动，流程都是大同小异。在v1.8.12 版本中 node\node.go 文件中startIPC()、startHTTP()、startWS()三个方法的具体启动方式封装到 rpc\endpoints.go 文件对应函数中
 
-	// startWS initializes and starts the websocket RPC endpoint.
-	func (n *Node) startWS(endpoint string, apis []rpc.API, modules []string, wsOrigins []string, exposeAll bool) error {
-		// Short circuit if the WS endpoint isn't being exposed
-		if endpoint == "" {
-			return nil
-		}
-		// Generate the whitelist based on the allowed modules
-		// 生成白名单
-		whitelist := make(map[string]bool)
-		for _, module := range modules {
-			whitelist[module] = true
-		}
-		// Register all the APIs exposed by the services
-		handler := rpc.NewServer()
-		for _, api := range apis {
-			if exposeAll || whitelist[api.Namespace] || (len(whitelist) == 0 && api.Public) {
-			// 只有这集中情况下才会把这个api进行注册。
-				if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
-					return err
-				}
-				log.Debug(fmt.Sprintf("WebSocket registered %T under '%s'", api.Service, api.Namespace))
-			}
-		}
-		// All APIs registered, start the HTTP listener
-		var (
-			listener net.Listener
-			err      error
-		)
-		if listener, err = net.Listen("tcp", endpoint); err != nil {
-			return err
-		}
-		go rpc.NewWSServer(wsOrigins, handler).Serve(listener)
-		log.Info(fmt.Sprintf("WebSocket endpoint opened: ws://%s", listener.Addr()))
-	
-		// All listeners booted successfully
-		n.wsEndpoint = endpoint
-		n.wsListener = listener
-		n.wsHandler = handler
-	
-		return nil
+// StartWSEndpoint starts a websocket endpoint
+func StartWSEndpoint(endpoint string, apis []API, modules []string, wsOrigins []string, exposeAll bool) (net.Listener, *Server, error) {
+
+	// Generate the whitelist based on the allowed modules
+	// 生成白名单
+	whitelist := make(map[string]bool)
+	for _, module := range modules {
+		whitelist[module] = true
 	}
+	// Register all the APIs exposed by the services
+	handler := NewServer()
+	for _, api := range apis {
+		if exposeAll || whitelist[api.Namespace] || (len(whitelist) == 0 && api.Public) {		// 只有这几种情况下才会把这个api进行注册。
+			if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
+				return nil, nil, err
+			}
+			log.Debug("WebSocket registered", "service", api.Service, "namespace", api.Namespace)
+		}
+	}
+	// All APIs registered, start the HTTP listener
+	// 所有 APIs 都已经注册，启动 HTTP 监听器
+	var (
+		listener net.Listener
+		err      error
+	)
+	if listener, err = net.Listen("tcp", endpoint); err != nil {
+		return nil, nil, err
+	}
+	go NewWSServer(wsOrigins, handler).Serve(listener)
+	return listener, handler, err
+
+}
+	
