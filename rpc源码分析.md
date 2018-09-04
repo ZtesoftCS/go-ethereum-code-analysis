@@ -62,7 +62,7 @@ server提供了ServerCodec方法，这个方法接收ServerCodec实例作为参�
 		return a + b
 	 }
 	
-	 func (s *CalculatorService Div(a, b int) (int, error) {
+	 func (s *CalculatorService) Div(a, b int) (int, error) {
 		if b == 0 {
 			return 0, errors.New("divide by zero")
 		}
