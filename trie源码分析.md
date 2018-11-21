@@ -200,7 +200,7 @@ encoding.go主要处理trie树中的三种编码格式的相互转换的工作�
 	}
 
 ### 数据结构
-node的结构，可以看到node分为4种类型， fullNode对应了黄皮书里面的分支节点，shortNode对应了黄皮书里面的扩展节点和叶子节点(通过shortNode.Val的类型来对应到底是叶子节点(valueNode)还是分支节点(fullNode))
+node的结构，可以看到node分为4种类型， fullNode对应了黄皮书里面的分支节点，shortNode对应了黄皮书里面的扩展节点和叶子节点(通过shortNode.Val的类型来判断当前节点是叶子节点(shortNode.Val为valueNode)还是拓展节点(通过shortNode.Val指向下一个node))。
 
 	type node interface {
 		fstring(string) string
