@@ -7,6 +7,7 @@
 - [以太坊黄皮书 符号索引](a黄皮书里面出现的所有的符号索引.md)
 - [account文件解析](/accounts源码分析.md)
 - build文件解析： 此文件主要用于编译安装使用
+- [cmd文件解析](/cmd.md)
 - [rlp源码解析](/rlp源码解析.md)
 - [trie源码分析](/trie源码分析.md)
 - [ethdb源码分析](/ethdb源码分析.md)
