@@ -1,4 +1,4 @@
-accounts包实现了以太坊客户端的钱包和账户管理。以太坊的钱包提供了keyStore模式和usb两种钱包。同时以太坊的 合约的ABI的代码也放在了account/abi目录。 abi项目好像跟账户管理没有什么关系。 这里暂时只分析了账号管理的接口。 具体的keystore和usb的实现代码暂时不会给出。
+accounts包实现了以太坊客户端的钱包和账户管理。以太坊的钱包提供了keyStore模式和usb两种钱包。同时以太坊的 合约的ABI的代码也放在了account/abi目录。 这里暂时只分析了账号管理的接口。 具体的keystore和usb的实现代码暂时不会给出。
 # 组件关系
 ![](https://github.com/Billy1900/go-ethereum-code-analysis/blob/master/picture/accounts.png)
 # accounts支持的钱包类型
