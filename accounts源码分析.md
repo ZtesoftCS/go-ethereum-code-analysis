@@ -49,6 +49,12 @@ ledger.go中定义了ledgerDriver结构体及其方法。ledgerDriver结构体�
 trezor.go中定义了trezorDriver结构体及其方法。与ledgerDriver类似，trezorDriver结构体也是driver接口的实现，它实现了与trezor类型的硬件钱包的通信协议和代码。
 ### wallet.go
 wallet.go中定义了wallet结构体。wallet结构体实现了Wallet接口，是硬件钱包的具体实现。但它内部其实主要调用硬件钱包的driver实现相关功能。
+## scwallet
+这个文件夹是关于不同account之间的互相安全通信（secure wallet），通过定义会话秘钥、二级秘钥来确保通话双方的信息真实、不被篡改、利用。 尤其是转账信息更不能被利用、被他人打开、和被篡改。
+## backend
+此文件夹是为了和外部的其他账户进行通信
+## abi
+ABI是Application Binary Interface的缩写，字面意思 应用二进制接口，可以通俗的理解为合约的接口说明。当合约被编译后，那么它的abi也就确定了。abi主要是处理智能合约与账户的交互。
 </br>
 
 账号是通过数据结构和接口来定义了
