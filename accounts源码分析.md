@@ -57,7 +57,7 @@ wallet.go中定义了wallet结构体。wallet结构体实现了Wallet接口，�
 ABI是Application Binary Interface的缩写，字面意思 应用二进制接口，可以通俗的理解为合约的接口说明。当合约被编译后，那么它的abi也就确定了。abi主要是处理智能合约与账户的交互。
 </br>
 
-账号是通过数据结构和接口来定义了
+
 # 数据结构
 账号
 
