@@ -1,8 +1,5 @@
 # go-ethereum-code-analysis
-
-**希望能够分析以太坊的代码来学习区块链技术和GO语言的使用**
-
-分析[go-ethereum](https://github.com/ethereum/go-ethereum)的过程，我希望从依赖比较少的底层技术组件开始，慢慢深入到核心逻辑。
+本文结合了一些网上资料，加上个人的原创结合而成。个人认为解释的比较清晰。若有疑问，还请及时批评指出。
 
 ## 目录
 
