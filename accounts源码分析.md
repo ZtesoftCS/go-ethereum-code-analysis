@@ -1,10 +1,61 @@
 accounts包实现了以太坊客户端的钱包和账户管理。以太坊的钱包提供了keyStore模式和usb两种钱包。同时以太坊的 合约的ABI的代码也放在了account/abi目录。 abi项目好像跟账户管理没有什么关系。 这里暂时只分析了账号管理的接口。 具体的keystore和usb的实现代码暂时不会给出。
+# accounts支持的钱包类型
+在accounts中总共支持两大类共4种钱包类型。两大类包括keystore和usbwallet；其中keystore中的私钥存储可以分为加密的和不加密的；usbwallet支持ledger和trenzer两种硬件钱包。
+# keystore：本地文件夹
+keystore类型的钱包其实是一个本地文件夹目录。在这个目录下可以存放多个文件，每个文件都存储着一个私钥信息。这些文件都是json格式，其中的私钥可以是加密的，也可以是非加密的明文。但非加密的格式已经被废弃了（谁都不想把自己的私钥明文存放在某个文件里）。
+keystore的目录路径可以在配置文件中指定，默认路径是<DataDir>/keystore。每一个文件的文件名格式为：UTC--<created_at UTC ISO8601>--<address hex>。例如UTC--2016-03-22T12-57-55--7ef5a6135f1fd6a02593eedc869c6d41d934aef8。 keystore目录和目录内的文件是可以直接拷贝的。也就是说，如果你想把某个私钥转移到别的电脑上，你可以直接拷贝文件到其它电脑的keystore目录。拷贝整个keystore目录也是一样的。
 
+# HD：分层确定性（Hierarchical Deterministic）钱包
+我们首先解释一下HD（Hierarchical Deterministic）的概念。这个概念的中文名称叫做“分层确定性”，我的理解是这是一种key的派生方式，它可以在只使用一个公钥（我们称这个公钥为主公钥，其对应的私钥称为主私钥）的情况下，生成任意多个子公钥，而这些子公钥都是可以被主私钥控制的。HD的概念最早是从比特币的BIP-32提案中提出来的。
+每一个key都有自己的路径，即是是一个派生的key，这一点和keystore类型是一样的。我们先来看一下HD账户的路径格式：
+m / purpose’ / coin_type’ / account’ / change / address_index
+这种路径规范不是一下子形成的。虽然BIP-32提出了HD的概念，但实现者自由度比较大，导致相互之间兼容性很差。因此在BIP-43中增加了purpose字段；而在BIP-44中对路径规范进行了大量的扩展，使其可以用在不同币种上[1]。
+在BIP-43中推荐purpose的值为44’(0x8000002C)；而在BIPSLIP-44中为以太坊类型的coin_type为配的值为60’(0x8000003c)。所以我们在以太坊中可能看到形如m/44'/60'/0'/0这样的路径。
+在accounts模块中共支持两种HD钱包：Ledger和Trenzer。它们都是非常有名的硬件钱包，有兴趣的朋友可以自己搜索一下，这是不作过多介绍。
+
+# 目录结构
+accounts模块下的源文件比较多，这里不一一说明，只挑一些比较重要的聊一下。
+### accounts.go
+accounts.go定义了accounts模块对外导出的一些结构体和接口，包括Account结构体、Wallet接口和Backend接口。其中Account由一个以太坊地址和钱包路径组成；而各种类型的钱包需要实现Wallet和Backend接口来接入账入管理。
+### hd.go
+hd.go中定义了HD类型的钱包的路径解析等函数。这个文件中的注释还解析了HD路径一些知识，值得一看。（但我认为它关于哪个BIP提案提出的哪个规范说得不对，比如注释中提到BIP-32定义了路径规范m / purpose' / coin_type' / account' / change / address_index，这应该是错误的，我们前面提到过，purpose是在BIP-43中提出的，而整个路径规范是在BIP-44中提出的）
+### manager.go
+manager.go中定义了Manager结构及其方法。这是accounts模块对外导出的主要的结构和方法之一。其它模块（比如cmd/geth中）通过这个结构体提供的方法对钱包进行管理。
+### url.go
+这个文件中的代码定义了代表以太坊钱包路径的URL结构体及相关函数。与hd.go中不同的是，URL结构体中保存了钱包的类型（scheme）和钱包路径的字符串形式的表示；而hd.go中定义了HD钱包路径的类型（非字符串类型）的解析及字符串转换等方法。
+### keystore
+这是一个子目录，此目录下的代码实现了keystore类型的钱包。
+### account_cache.go
+此文件中的代码实现了accountCache结构体及方法。accountCache的功能是在内存中缓存keystore钱包目录下所有账号信息。无论keystore目录中的文件无何变动（新建、删除、修改），accountCache都可以在扫描目录时将变动更新到内存中。
+### file_cache.go
+此文件中的代码实现了fileCache结构体及相关代码。与account_cache.go类似，file_cache.go中实现了对keystore目录下所有文件的信息的缓存。accountCache就是通过fileCache来获取文件变动的信息，进而得到账号变动信息的。
+### key.go
+key.go主要定义了Key结构体及其json格式的marshal/unmarshal方式。另外这个文件中还定义了通过keyStore接口将Key写入文件中的函数。keyStore接口中定义了Key被写入文件的具体细节，在passphrase.go和plain.go中都有实现。
+### keystore.go
+这个文件里的代码定义了KeyStore结构体及其方法。KeyStore结构体实现了Backend接口，是keystore类型的钱包的后端实现。同时它也实现了keystore类型钱包的大多数功能。
+### passphrase.go
+passphrase.go中定义了keyStorePassphrase结构体及其方法。keyStorePassphrase结构体是对keyStore接口（在key.go文件中）的一种实现方式，它会要求调用者提供一个密码，从而使用aes加密算法加密私钥后，将加密数据写入文件中。
+### plain.go
+这个文件中的代码定义了keyStorePlain结构体及其方法。keyStorePlain与keyStorePassphrase类似，也是对keyStore接口的实现。不同的是，keyStorePlain直接将密码明文存储在文件中。目前这种方式已被标记弃用且整个以太坊项目中都没有调用这个文件里的函数的地方，确实谁也不想将自己的私钥明文存在本地磁盘上。
+### wallet.go
+wallet.go中定义了keystoreWallet结构体及其方法。keystoreWallet是keystore类型的钱包的实现，但其功能基本都是调用KeyStore对象实现的。
+### watch.go
+watch.go中定义了watcher结构体及其方法。watcher用来监控keystore目录下的文件，如果文件发生变化，则立即调用account_cache.go中的代码重新扫描账户信息。但watcher只在某些系统下有效，这是文件的build注释：// +build darwin,!ios freebsd linux,!arm64 netbsd solaris
+### usbwallet
+这是一个子目录，此目录下的代码实现了对通过usb接入的硬件钱包的访问，但只支持ledger和trezor两种类型的硬件钱包。
+### hub.go
+hub.go中定义了Hub结构体及其方法。Hub结构体实现了Backend接口，是usbwallet类型的钱包的后端实现。
+### ledger.go
+ledger.go中定义了ledgerDriver结构体及其方法。ledgerDriver结构体是driver接口的实现，它实现了与ledger类型的硬件钱包通信协议和代码。
+### trezor.go
+trezor.go中定义了trezorDriver结构体及其方法。与ledgerDriver类似，trezorDriver结构体也是driver接口的实现，它实现了与trezor类型的硬件钱包的通信协议和代码。
+### wallet.go
+wallet.go中定义了wallet结构体。wallet结构体实现了Wallet接口，是硬件钱包的具体实现。但它内部其实主要调用硬件钱包的driver实现相关功能。
 
 
 账号是通过数据结构和接口来定义了
 
-## 数据结构
+# 数据结构
 账号
 
 	// Account represents an Ethereum account located at a specific location defined
