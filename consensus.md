@@ -8,7 +8,7 @@ Engine接口定义了共识引擎需要实现的所有函数，实际上按功�
 - 区块盖章类：包括Prepare/Finalize/Seal等，用于最终生成有效区块（比如添加工作量证明）
 与区块验证相关联的还有2个外部接口：Processor用于执行交易，而Validator用于验证区块内容和状态。另外，由于需要访问以前的区块链数据，抽象出了一个ChainReader接口，BlockChain和HeaderChain都实现了该接口以完成对数据的访问。
 
-## 区块验证流程
+## 1.区块验证流程
 ![image](https://github.com/Billy1900/go-ethereum-code-analysis/blob/master/picture/block-verification-process.png)
 Downloader收到新区块后会调用BlockChain的InsertChain()函数插入新区块。在插入之前需要先要验证区块的有效性，基本分为4个步骤：
 - 验证区块头：调用Ethash.VerifyHeaders()
@@ -17,22 +17,22 @@ Downloader收到新区块后会调用BlockChain的InsertChain()函数插入新�
 - 验证状态转换：调用BlockValidator.ValidateState()</br>
 如果验证成功，则往数据库中写入区块信息，然后广播ChainHeadEvent事件。
 
-## 区块盖章流程
+## 2.区块盖章流程
 ![image](https://github.com/Billy1900/go-ethereum-code-analysis/blob/master/picture/block-seal-process.png)
 新产生的区块必须经过“盖章(seal)”才能成为有效区块，具体到Ethash来说，就是要执行POW计算以获得低于设定难度的nonce值。这个其实在之前的挖矿流程分析中已经接触过了，主要分为3个步骤：
 - 准备工作：调用Ethash.Prepare()计算难度值
 - 生成区块：调用Ethash.Finalize()打包新区块
 - 盖章：调用Ethash.Seal()进行POW计算，填充nonce值
 
-## 实现分析
-### consensus.go
+## 3.实现分析
+### 3.1　consensus.go
 该文件主要是定义整个ｃｏｎｓｅｎｓｕｓ，ｃｈａｉｎＲｅａｄｅｒ是读取以前的区块数据，Ｅｎｇｉｎｅ是ｃｏｎｓｅｎｓｕｓ工作的核心模块，ＰＯＷ是目前的一种机制，可以看到他的核心模块是Ｅｎｇｉｎｅ
 <pre><code>type PoW interface {
 	Engine
 	// Hashrate returns the current mining hashrate of a PoW consensus engine.
 	Hashrate() float64
 }</code></pre>
-### ethan/algorithm.go
+### 3.2　ethan/algorithm.go
 它涉及到挖矿算法的很多细节。
 <pre><code>// cacheSize returns the size of the ethash verification cache that belongs to a certain
 // block number.
@@ -137,7 +137,7 @@ func hashimotoFull(dataset []uint32, hash []byte, nonce uint64) ([]byte, []byte)
 - hashimoto aggregates data from the full dataset in order to produce our final value for a particular header hash and nonce.
 - hashimotoLight aggregates data from the full dataset (using only a small in-memory cache) in order to produce our final value for a particular header hash and nonce.
 - hashimotoFull aggregates data from the full dataset (using the full in-memory dataset) in order to produce our final value for a particular header hash and nonce.
-### ethan/api.go
+### 3.3　ethan/api.go
 the purpose is that API exposes ethash related methods for the RPC interface.
 <pre><code>func (api *API) GetWork() ([4]string, error)</code></pre>
 GetWork returns a work package for external miner. The work package consists of 3 strings:
@@ -149,7 +149,8 @@ GetWork returns a work package for external miner. The work package consists of 
 SubmitWork can be used by external miner to submit their POW solution. It returns an indication if the work was accepted. Note either an invalid solution, a stale work a non-existent work will return false.
 <pre><code>func (api *API) SubmitHashRate(rate hexutil.Uint64, id common.Hash) bool</code></pre>
 SubmitHashrate can be used for remote miners to submit their hash rate. This enables the node to report the combined hash rate of all miners which submit work through this node.![what is hash rate?](https://www.buybitcoinworldwide.com/mining/hash-rate/), simply  it can be regared as computation.
-### ethan/consensus.go
+### 3.4　ethan/consensus.go
+ethan/consensus.go实现的大多函数是对ｃｏｎｓｅｎｓｕｓ/ｏｎｓｅｎｓｕｓ.go中Ｅｎｇｉｎｅ中的ｉｎｔｅｒｆａｃｅ的函数具体实现.具体功能注释都已经写的很详尽，在此不过多赘述。故只挑了一些进行注释。
 #### ｅｔｈａｎ/consensus.go/VerifyHeaders()
 VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，只不过ＶｅｒｉｆｙＨｅａｄｅｒｓ是处理一堆ｈｅａｄｅｒｓ
 <pre><code>// Spawn as many workers as allowed threads
@@ -237,7 +238,7 @@ VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，�
 >- 校验区块的gaslimit 是在合理范围
 >- 特殊的校验，比如dao分叉后的几个块extra里面写了特殊数据，来判断一下
 
-### ethan/consensus.go/VerifyUncles()
+###＃ ethan/consensus.go/VerifyUncles()
 这个函数是在BlockValidator.VerifyBody()内部调用的，主要是验证叔块的有效性。
 <pre><code>    if len(block.Uncles()) > maxUncles {
         return errTooManyUncles
@@ -284,7 +285,7 @@ VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，�
 - 如果叔块和当前块拥有共同的父块，返回错误（也就是说不能打包和当前块相同高度的叔块）
 - 最后验证一下叔块头的有效性
 
-### ethan/consensus.go/Prepare()
+###＃ ethan/consensus.go/Prepare()
 <pre><code>
 func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header) error {
     parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
@@ -334,7 +335,7 @@ https://juejin.im/post/59ad6606f265da246f382b88</br>
         fakeBlockNumber = fakeBlockNumber.Sub(parent.Number, big2999999) // Note, parent is 1 less than the actual block number
     }</code></pre>
     
- ### ethash/consensus.go/FinalizeAndAssemble()
+ ###＃ ethash/consensus.go/FinalizeAndAssemble()
 <pre><code>func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
     // Accumulate any block and uncle rewards and commit the final state root
     accumulateRewards(chain.Config(), state, header, uncles)
@@ -344,7 +345,7 @@ https://juejin.im/post/59ad6606f265da246f382b88</br>
 }</code></pre>
 这个挖矿流程是先计算收益，然后生成MPT的Merkle Root，最后创建新区块。
 
-### ethash/consensus.go/sealer/seal()
+###＃ ethash/consensus.go/sealer/seal()
 这个函数就是真正执行POW计算的地方了，代码位于consensus/ethash/sealer.go。代码比较长，分段进行分析：
 <pre><code>    abort := make(chan struct{})
     found := make(chan *types.Block)</code></pre>
@@ -363,7 +364,7 @@ https://juejin.im/post/59ad6606f265da246f382b88</br>
     if threads == 0 {
         threads = runtime.NumCPU()
     }</code></pre>
-接着初始化随机数种子和线程数。
+接着初始化随机数种子和线程数
 <pre><code>    var pend sync.WaitGroup
     for i := 0; i < threads; i++ {
         pend.Add(1)
@@ -431,4 +432,11 @@ hashimotoFull()函数内部会把hash和nonce拼在一起，计算出一个摘�
         uncles:       b.uncles,
     }
 }</code></pre>
-
+### 3.5 ethan/sealer.go
+sealer主要是用于最终为ｂｌｏｃｋ打标签，也就是最终的挖矿计算的过程。主要的函数如下：
+<pre><code>func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, results chan<- *types.Block, stop <-chan struct{}) error </code></pre>
+- Seal implements consensus.Engine, attempting to find a nonce that satisfies the block's difficulty requirements.
+<pre><code>func (ethash *Ethash) mine(block *types.Block, id int, seed uint64, abort chan struct{}, found chan *types.Block) </code></pre>
+- mine is the actual proof-of-work miner that searches for a nonce starting from seed that results in correct final block difficulty.
+<pre><code>func (ethash *Ethash) remote(notify []string, noverify bool)</code></pre>
+-remote is a standalone goroutine to handle remote mining related stuff.
