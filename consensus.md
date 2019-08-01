@@ -238,7 +238,7 @@ VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，�
 >- 校验区块的gaslimit 是在合理范围
 >- 特殊的校验，比如dao分叉后的几个块extra里面写了特殊数据，来判断一下
 
-###＃ ethan/consensus.go/VerifyUncles()
+#### ethan/consensus.go/VerifyUncles()
 这个函数是在BlockValidator.VerifyBody()内部调用的，主要是验证叔块的有效性。
 <pre><code>    if len(block.Uncles()) > maxUncles {
         return errTooManyUncles
