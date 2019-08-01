@@ -439,4 +439,4 @@ sealer主要是用于最终为ｂｌｏｃｋ打标签，也就是最终的挖�
 <pre><code>func (ethash *Ethash) mine(block *types.Block, id int, seed uint64, abort chan struct{}, found chan *types.Block) </code></pre>
 - mine is the actual proof-of-work miner that searches for a nonce starting from seed that results in correct final block difficulty.
 <pre><code>func (ethash *Ethash) remote(notify []string, noverify bool)</code></pre>
--remote is a standalone goroutine to handle remote mining related stuff.
+- remote is a standalone goroutine to handle remote mining related stuff.
