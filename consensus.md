@@ -159,3 +159,151 @@ VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，�
 - 如果叔块和当前块拥有共同的父块，返回错误（也就是说不能打包和当前块相同高度的叔块）
 - 最后验证一下叔块头的有效性
 
+### ethan/consensus.go/Prepare()
+<pre><code>
+func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header) error {
+    parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
+    if parent == nil {
+        return consensus.ErrUnknownAncestor
+    }
+    header.Difficulty = ethash.CalcDifficulty(chain, header.Time.Uint64(), parent)
+    return nil
+}</code></pre>
+可以看到，会调用CalcDifficulty()计算难度值，继续跟踪：
+<pre><code>func (ethash *Ethash) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *types.Header) *big.Int {
+    return CalcDifficulty(chain.Config(), time, parent)
+}
+
+func CalcDifficulty(config *params.ChainConfig, time uint64, parent *types.Header) *big.Int {
+    next := new(big.Int).Add(parent.Number, big1)
+    switch {
+    case config.IsByzantium(next):
+        return calcDifficultyByzantium(time, parent)
+    case config.IsHomestead(next):
+        return calcDifficultyHomestead(time, parent)
+    default:
+        return calcDifficultyFrontier(time, parent)
+    }
+}</code></pre>
+根据以太坊的Roadmap，会经历Frontier，Homestead，Metropolis，Serenity这几个大的版本，当前处于Metropolis阶段。Metropolis又分为2个小版本：Byzantium和Constantinople，目前的最新代码版本是Byzantium，因此会调用calcDifficultyByzantium()函数。</br>
+计算难度的公式如下：</br>
+diff = (parent_diff +(parent_diff / 2048 * max((2 if len(parent.uncles) else 1) - ((timestamp - parent.timestamp) // 9), -99))) + 2^(periodCount - 2)</br>
+>- parent_diff ：上一个区块的难度
+>- block_timestamp ：当前块的时间戳
+>- parent_timestamp：上一个块的时间戳
+>- periodCount ：区块num/100000
+>- block_timestamp - parent_timestamp 差值小于10秒 变难</br>
+  block_timestamp - parent_timestamp 差值10-20秒 不变</br>
+  block_timestamp - parent_timestamp 差值大于20秒 变容易，并且大的越多，越容易，但是又上限
+>- 总体上块的难度是递增的
+>- seal 开始做挖矿的事情，“解题”直到成功或者退出.根据挖矿难度计算目标值,选取随机数nonce+区块头(不包含nonce)的hash，再做一次hash，结果小于目标值，则退出，否则循环重试.如果外部退出了(比如已经收到这个块了)，则立马放弃当前块的打包.Finalize() 做挖矿成功后最后善后的事情,计算矿工的奖励：区块奖励，叔块奖励，
+
+前面一项是根据父块难度值继续难度调整，而后面一项就是传说中的“难度炸弹”。关于难度炸弹相关的具体细节可以参考下面这篇文章：
+https://juejin.im/post/59ad6606f265da246f382b88</br>
+由于PoS共识机制开发进度延迟，不得不减小难度炸弹从而延迟“冰川时代”的到来，具体做法就是把当前区块高度减小3000000，参见以下代码：
+<pre><code>   // calculate a fake block number for the ice-age delay:
+    //   https://github.com/ethereum/EIPs/pull/669
+    //   fake_block_number = min(0, block.number - 3_000_000
+    fakeBlockNumber := new(big.Int)
+    if parent.Number.Cmp(big2999999) >= 0 {
+        fakeBlockNumber = fakeBlockNumber.Sub(parent.Number, big2999999) // Note, parent is 1 less than the actual block number
+    }</code></pre>
+    
+ ### ethash/consensus.go/FinalizeAndAssemble()
+<pre><code>func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
+    // Accumulate any block and uncle rewards and commit the final state root
+    accumulateRewards(chain.Config(), state, header, uncles)
+    header.Root = state.IntermediateRoot(chain.Config().IsEIP158(header.Number))
+    // Header seems complete, assemble into a block and return
+    return types.NewBlock(header, txs, uncles, receipts), nil
+}</code></pre>
+这个挖矿流程是先计算收益，然后生成MPT的Merkle Root，最后创建新区块。
+
+### ethash/consensus.go/sealer/seal()
+这个函数就是真正执行POW计算的地方了，代码位于consensus/ethash/sealer.go。代码比较长，分段进行分析：
+<pre><code>    abort := make(chan struct{})
+    found := make(chan *types.Block)</code></pre>
+首先创建了两个channel，用于退出和发现nonce时发送事件。
+<pre><code>    ethash.lock.Lock()
+    threads := ethash.threads
+    if ethash.rand == nil {
+        seed, err := crand.Int(crand.Reader, big.NewInt(math.MaxInt64))
+        if err != nil {
+            ethash.lock.Unlock()
+            return nil, err
+        }
+        ethash.rand = rand.New(rand.NewSource(seed.Int64()))
+    }
+    ethash.lock.Unlock()
+    if threads == 0 {
+        threads = runtime.NumCPU()
+    }</code></pre>
+接着初始化随机数种子和线程数。
+<pre><code>    var pend sync.WaitGroup
+    for i := 0; i < threads; i++ {
+        pend.Add(1)
+        go func(id int, nonce uint64) {
+            defer pend.Done()
+            ethash.mine(block, id, nonce, abort, found)
+        }(i, uint64(ethash.rand.Int63()))
+    }</code></pre>
+然后就是创建线程进行挖矿了，会调用ethash.mine()函数。
+<pre><code>    // Wait until sealing is terminated or a nonce is found
+    var result *types.Block
+    select {
+    case <-stop:
+        // Outside abort, stop all miner threads
+        close(abort)
+    case result = <-found:
+        // One of the threads found a block, abort all others
+        close(abort)
+    case <-ethash.update:
+        // Thread count was changed on user request, restart
+        close(abort)
+        pend.Wait()
+        return ethash.Seal(chain, block, stop)
+    }
+    // Wait for all miners to terminate and return the block
+    pend.Wait()
+    return result, nil</code></pre>
+最后就是等待挖矿结果了，有可能找到nonce挖矿成功，也有可能别人先挖出了区块从而需要终止挖矿。
+</br>ethash.mine()函数的实现，先看一些变量声明：
+<pre><code>    var (
+        header  = block.Header()
+        hash    = header.HashNoNonce().Bytes()
+        target  = new(big.Int).Div(maxUint256, header.Difficulty)
+        number  = header.Number.Uint64()
+        dataset = ethash.dataset(number)
+    )
+    // Start generating random nonces until we abort or find a good one
+    var (
+        attempts = int64(0)
+        nonce    = seed
+    )</code></pre>
+其中hash指的是不带nonce的区块头hash值，nonce是一个随机数种子。target是目标值，等于2^256除以难度值，我们接下来要计算的hash值必须小于这个目标值才算挖矿成功。接下来就是不断修改nonce并计算hash值了：
+<pre><code>            digest, result := hashimotoFull(dataset.dataset, hash, nonce)
+     if new(big.Int).SetBytes(result).Cmp(target) <= 0 {
+     // Correct nonce found, create a new header with it
+     header = types.CopyHeader(header)
+     header.Nonce = types.EncodeNonce(nonce)
+     header.MixDigest = common.BytesToHash(digest)
+     // Seal and return a block (if still needed)
+     select {
+     case found <- block.WithSeal(header):
+     logger.Trace("Ethash nonce found and reported", "attempts", nonce-seed, "nonce", nonce)
+     case <-abort:
+                logger.Trace("Ethash nonce found but discarded", "attempts", nonce-seed, "nonce", nonce)
+                }
+                break search
+            }
+     nonce++</code></pre>
+hashimotoFull()函数内部会把hash和nonce拼在一起，计算出一个摘要（digest）和一个hash值（result）。如果hash值满足难度要求，挖矿成功，填充区块头的Nonce和MixDigest字段，然后调用block.WithSeal()生成盖过章的区块：
+<pre><code>func (b *Block) WithSeal(header *Header) *Block {
+    cpy := *header
+    return &Block{
+        header:       &cpy,
+        transactions: b.transactions,
+        uncles:       b.uncles,
+    }
+}</code></pre>
+
