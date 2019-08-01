@@ -32,6 +32,111 @@ Downloader收到新区块后会调用BlockChain的InsertChain()函数插入新�
 	// Hashrate returns the current mining hashrate of a PoW consensus engine.
 	Hashrate() float64
 }</code></pre>
+### ethan/algorithm.go
+它涉及到挖矿算法的很多细节。
+<pre><code>// cacheSize returns the size of the ethash verification cache that belongs to a certain
+// block number.
+func cacheSize(block uint64) uint64 {
+	epoch := int(block / epochLength)
+	if epoch < maxEpoch {
+		return cacheSizes[epoch]
+	}
+	return calcCacheSize(epoch)
+}
+
+// calcCacheSize calculates the cache size for epoch. The cache size grows linearly,
+// however, we always take the highest prime below the linearly growing threshold in order
+// to reduce the risk of accidental regularities leading to cyclic behavior.
+func calcCacheSize(epoch int) uint64 {
+	size := cacheInitBytes + cacheGrowthBytes*uint64(epoch) - hashBytes
+	for !new(big.Int).SetUint64(size / hashBytes).ProbablyPrime(1) { // Always accurate for n < 2^64
+		size -= 2 * hashBytes
+	}
+	return size
+}</code></pre>
+cache的具体作用涉及到挖矿计算的细节，如下：
+Ethash 是以太坊使用的 PoW 算法，其原理可以用一个公式来概括：</br>
+**RAND(h,n)<=M/d**</br>
+其中 h 是区块头的哈希值（没有 Nonce），n 是 Nonce 值，M 是一个极大的数字，d 指挖矿难度，RAND 是一个根据参数生成随机值的操作，挖矿的过程简单来说就是寻找适合的 nonce，使上述不等式成立。原理和比特币的基本相同，但 Ethash 稍特别一点，因为 geth 的开发者在设计初期就考虑了抵制矿机的问题里
+</br>Ethash 的具体步骤为：
+- 对于每个区块，先算出一个种子。种子的计算只依赖当前区块信息。
+- 使用种子生成伪随机数据集，称为 cache。轻客户端需要保存 cache
+- 基于 cache 生成 1GB 大小的数据集，称为 the DAG。这个数据集的每一个元素都依赖于 cache 中的某几个元素，只要有 cache 就可以快速计算出 DAG 中指定位置的元素。完整可挖矿客户端需要保存 DAG。
+- 挖矿可以概括为从 DAG 中随机选择元素，然后暴力枚举选择一个 nonce 值，对其进行哈希计算，使其符合约定的难度，而这个难度其实就是要求哈希值的前缀包括多少个0。验证的时候，基于 cache 计算指定位置 DAG 元素，然后验证这个元素集合的哈希值结果小于某个值，这个过程只需要普通 CPU 和普通内存。
+- cache 和 DAG 每过一个周期更新一次，一个周期长度是 30000 个区块。DAG 只取决于区块数量，大小会随着时间推移线性增长，从 1GB 开始，每年大约增加 7GB。由于 DAG 需要很长时间生成，所以 geth 每次会维护2个 DAG 集合。
+<pre><code>// datasetSize returns the size of the ethash mining dataset that belongs to a certain
+// block number.
+func datasetSize(block uint64) uint64 {
+	epoch := int(block / epochLength)
+	if epoch < maxEpoch {
+		return datasetSizes[epoch]
+	}
+	return calcDatasetSize(epoch)
+}
+
+// calcDatasetSize calculates the dataset size for epoch. The dataset size grows linearly,
+// however, we always take the highest prime below the linearly growing threshold in order
+// to reduce the risk of accidental regularities leading to cyclic behavior.
+func calcDatasetSize(epoch int) uint64 {
+	size := datasetInitBytes + datasetGrowthBytes*uint64(epoch) - mixBytes
+	for !new(big.Int).SetUint64(size / mixBytes).ProbablyPrime(1) { // Always accurate for n < 2^64
+		size -= 2 * mixBytes
+	}
+	return size
+}</code></pre>
+ｄａｔａｓｅｔ就是上文中提到的数据集。ｄａｔａｓｅｔｓｉｚｅ和ｃａｃｈｅｓｅｔsize都已经硬编码写进了文件当中，
+<pre><code>// hasher is a repetitive hasher allowing the same hash data structures to be
+// reused between hash runs instead of requiring new ones to be created.
+type hasher func(dest []byte, data []byte)
+
+// makeHasher creates a repetitive hasher, allowing the same hash data structures to
+// be reused between hash runs instead of requiring new ones to be created. The returned
+// function is not thread safe!
+func makeHasher(h hash.Hash) hasher {
+	// sha3.state supports Read to get the sum, use it to avoid the overhead of Sum.
+	// Read alters the state but we reset the hash before every operation.
+	type readerHash interface {
+		hash.Hash
+		Read([]byte) (int, error)
+	}
+	rh, ok := h.(readerHash)
+	if !ok {
+		panic("can't find Read method on hash")
+	}
+	outputLen := rh.Size()
+	return func(dest []byte, data []byte) {
+		rh.Reset()
+		rh.Write(data)
+		rh.Read(dest[:outputLen])
+	}
+}
+
+// seedHash is the seed to use for generating a verification cache and the mining
+// dataset.
+func seedHash(block uint64) []byte {
+	seed := make([]byte, 32)
+	if block < epochLength {
+		return seed
+	}
+	keccak256 := makeHasher(sha3.NewLegacyKeccak256())
+	for i := 0; i < int(block/epochLength); i++ {
+		keccak256(seed, seed)
+	}
+	return seed
+}</code></pre>
+seedHash也就是挖矿的第一步生成种子，ｍａｋｅHasher也就是生成种子（ｈａｓｈ的过程）
+<pre><code>func generateCache(dest []uint32, epoch uint64, seed []byte) </code></pre>
+ｇｅｎｅｒａｔｅＣａｃｈｅ是指从之前的种子中根据规则生成ｃａｃｈｅ. The cache production process involves first sequentially filling up 32 MB of memory, then performing two passes of Sergio Demian Lerner's RandMemoHash　algorithm from Strict Memory Hard Hashing Functions (2014). The output is a set of 524288 64-byte values.
+<pre><code>func generateDatasetItem(cache []uint32, index uint32, keccak512 hasher) []byte
+func generateDataset(dest []uint32, epoch uint64, cache []uint32) </code></pre>
+generateDatasetItem combines data from 256 pseudorandomly selected cache nodes, and hashes that to compute a single dataset node. generateDataset generates the entire ethash dataset for mining.
+<pre><code> func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32) []uint32) ([]byte, []byte)
+func hashimotoLight(size uint64, cache []uint32, hash []byte, nonce uint64) ([]byte, []byte)
+func hashimotoFull(dataset []uint32, hash []byte, nonce uint64) ([]byte, []byte)
+</code></pre>
+- hashimoto aggregates data from the full dataset in order to produce our final value for a particular header hash and nonce.
+- hashimotoLight aggregates data from the full dataset (using only a small in-memory cache) in order to produce our final value for a particular header hash and nonce.
+- hashimotoFull aggregates data from the full dataset (using the full in-memory dataset) in order to produce our final value for a particular header hash and nonce.
 ### ｅｔｈａｎ/consensus.go/VerifyHeaders()
 VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，只不过ＶｅｒｉｆｙＨｅａｄｅｒｓ是处理一堆ｈｅａｄｅｒｓ
 <pre><code>// Spawn as many workers as allowed threads
