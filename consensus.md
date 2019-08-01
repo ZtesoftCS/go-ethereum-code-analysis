@@ -130,14 +130,27 @@ seedHash也就是挖矿的第一步生成种子，ｍａｋｅHasher也就是生
 <pre><code>func generateDatasetItem(cache []uint32, index uint32, keccak512 hasher) []byte
 func generateDataset(dest []uint32, epoch uint64, cache []uint32) </code></pre>
 generateDatasetItem combines data from 256 pseudorandomly selected cache nodes, and hashes that to compute a single dataset node. generateDataset generates the entire ethash dataset for mining.
-<pre><code> func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32) []uint32) ([]byte, []byte)
+<pre><code>func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32) []uint32) ([]byte, []byte)
 func hashimotoLight(size uint64, cache []uint32, hash []byte, nonce uint64) ([]byte, []byte)
 func hashimotoFull(dataset []uint32, hash []byte, nonce uint64) ([]byte, []byte)
 </code></pre>
 - hashimoto aggregates data from the full dataset in order to produce our final value for a particular header hash and nonce.
 - hashimotoLight aggregates data from the full dataset (using only a small in-memory cache) in order to produce our final value for a particular header hash and nonce.
 - hashimotoFull aggregates data from the full dataset (using the full in-memory dataset) in order to produce our final value for a particular header hash and nonce.
-### ｅｔｈａｎ/consensus.go/VerifyHeaders()
+### ethan/api.go
+the purpose is that API exposes ethash related methods for the RPC interface.
+<pre><code>func (api *API) GetWork() ([4]string, error)</code></pre>
+GetWork returns a work package for external miner. The work package consists of 3 strings:
+-   result[0] - 32 bytes hex encoded current block header pow-hash
+-   result[1] - 32 bytes hex encoded seed hash used for DAG
+-   result[2] - 32 bytes hex encoded boundary condition ("target"), 2^256/difficulty
+-   result[3] - hex encoded block number
+<pre><code>func (api *API) SubmitWork(nonce types.BlockNonce, hash, digest common.Hash) bool </code></pre>
+SubmitWork can be used by external miner to submit their POW solution. It returns an indication if the work was accepted. Note either an invalid solution, a stale work a non-existent work will return false.
+<pre><code>func (api *API) SubmitHashRate(rate hexutil.Uint64, id common.Hash) bool</code></pre>
+SubmitHashrate can be used for remote miners to submit their hash rate. This enables the node to report the combined hash rate of all miners which submit work through this node.![what is hash rate?](https://www.buybitcoinworldwide.com/mining/hash-rate/), simply  it can be regared as computation.
+### ethan/consensus.go
+#### ｅｔｈａｎ/consensus.go/VerifyHeaders()
 VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，只不过ＶｅｒｉｆｙＨｅａｄｅｒｓ是处理一堆ｈｅａｄｅｒｓ
 <pre><code>// Spawn as many workers as allowed threads
     workers := runtime.GOMAXPROCS(0)
