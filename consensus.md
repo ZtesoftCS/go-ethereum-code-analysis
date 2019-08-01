@@ -25,6 +25,13 @@ Downloader收到新区块后会调用BlockChain的InsertChain()函数插入新�
 - 盖章：调用Ethash.Seal()进行POW计算，填充nonce值
 
 ## 实现分析
+### consensus.go
+该文件主要是定义整个ｃｏｎｓｅｎｓｕｓ，ｃｈａｉｎＲｅａｄｅｒ是读取以前的区块数据，Ｅｎｇｉｎｅ是ｃｏｎｓｅｎｓｕｓ工作的核心模块，ＰＯＷ是目前的一种机制，可以看到他的核心模块是Ｅｎｇｉｎｅ
+<pre><code>type PoW interface {
+	Engine
+	// Hashrate returns the current mining hashrate of a PoW consensus engine.
+	Hashrate() float64
+}</code></pre>
 ### ｅｔｈａｎ/consensus.go/VerifyHeaders()
 VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，只不过ＶｅｒｉｆｙＨｅａｄｅｒｓ是处理一堆ｈｅａｄｅｒｓ
 <pre><code>// Spawn as many workers as allowed threads
