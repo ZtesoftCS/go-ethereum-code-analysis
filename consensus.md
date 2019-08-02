@@ -285,7 +285,7 @@ VerifyHeaders和ＶｅｒｉｆｙＨｅａｄｅｒ实现原理都差不多，�
 - 如果叔块和当前块拥有共同的父块，返回错误（也就是说不能打包和当前块相同高度的叔块）
 - 最后验证一下叔块头的有效性
 
-###＃ ethan/consensus.go/Prepare()
+#### ethan/consensus.go/Prepare()
 <pre><code>
 func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header) error {
     parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
@@ -345,7 +345,7 @@ https://juejin.im/post/59ad6606f265da246f382b88</br>
 }</code></pre>
 这个挖矿流程是先计算收益，然后生成MPT的Merkle Root，最后创建新区块。
 
-###＃ ethash/consensus.go/sealer/seal()
+#### ethash/consensus.go/sealer/seal()
 这个函数就是真正执行POW计算的地方了，代码位于consensus/ethash/sealer.go。代码比较长，分段进行分析：
 <pre><code>    abort := make(chan struct{})
     found := make(chan *types.Block)</code></pre>
@@ -432,7 +432,33 @@ hashimotoFull()函数内部会把hash和nonce拼在一起，计算出一个摘�
         uncles:       b.uncles,
     }
 }</code></pre>
-### 3.5 ethan/sealer.go
+### 3.5 ethan/ethash.go
+将此文件内容分为几个大块进行理解</br>
+1)memoryMap块</br>
+memoryMapFile tries to memory map an already opened file descriptor， memoryMap tries to memory map a file of uint32s for read only access, memoryMapAndGenerate tries to memory map a temporary file of uint32s for write access, fill it with the data from a generator and then move it into the final path requested.
+<pre><code>func memoryMap(path string) (*os.File, mmap.MMap, []uint32, error)</br>
+func memoryMapFile(file *os.File, write bool) (mmap.MMap, []uint32, error)</br>
+func memoryMapAndGenerate(path string, size uint64, generator func(buffer []uint32)) (*os.File, mmap.MMap, []uint32, error)</code></pre>
+2）Ｌｒｕ块</br>
+Ｌｒｕ是一个ｃａｃｈｅ的存储策略，此处主要是用于优化ｄａｔａｓｅｔ和ｃａｃｈｅ中的存储数据方式</br>
+3)cache块</br>
+具体可以见文件中的注释，具体作用前面也已经说清楚,主要是ｃａｃｈｅ的具体逻辑实现</br>
+4)dataset块</br>
+具体可以见文件中的注释，具体作用前面也已经说清楚，主要是函数的具体逻辑实现</br>
+5)config块</br>
+<pre><code>// Config are the configuration parameters of the ethash.
+type Config struct {
+	CacheDir       string
+	CachesInMem    int
+	CachesOnDisk   int
+	DatasetDir     string
+	DatasetsInMem  int
+	DatasetsOnDisk int
+	PowMode        Mode
+}</code></pre>
+6)后续代码块</br>
+后续代码多为挖矿所需定义的结构体，看注释就可以解决疑惑。
+### 3.6 ethan/sealer.go
 sealer主要是用于最终为ｂｌｏｃｋ打标签，也就是最终的挖矿计算的过程。主要的函数如下：
 <pre><code>func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, results chan<- *types.Block, stop <-chan struct{}) error </code></pre>
 - Seal implements consensus.Engine, attempting to find a nonce that satisfies the block's difficulty requirements.
