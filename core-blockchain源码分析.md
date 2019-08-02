@@ -1,3 +1,4 @@
+# core/blockchain.go
 从测试案例来看,blockchain的主要功能点有下面几点.
 
 1. import.
@@ -9,15 +10,15 @@
 7. 支持Fast importing.
 8. Light vs Fast vs Full processing 在处理区块头上面的效果相等.
 
-可以看到blockchain的主要功能是维护区块链的状态, 包括区块的验证,插入和状态查询.
+blockchain的主要功能是维护区块链的状态, 包括区块的验证,插入和状态查询.
 
-名词解释:
+>名词解释:
 
-什么是规范的区块链
+>什么是规范的区块链
 
-因为在区块的创建过程中,可能在短时间内产生一些分叉, 在我们的数据库里面记录的其实是一颗区块树.我们会认为其中总难度最高的一条路径认为是我们的规范的区块链. 这样有很多区块虽然也能形成区块链,但是不是规范的区块链.
+>因为在区块的创建过程中,可能在短时间内产生一些分叉, 在我们的数据库里面记录的其实是一颗区块树.我们会认为其中总难度最高的一条路径认为是我们的规范的区块链. 这样有很多区块虽然也能形成区块链,但是不是规范的区块链.
 
-数据库结构:
+**数据库结构:**
 
 	区块的hash值和区块头的hash值是同样的么。所谓的区块的Hash值其实就是Header的区块值。
 	// key -> value
@@ -57,6 +58,7 @@ key | value|说明|插入|删除|
 
 数据结构
 
+Blockchian structure:
 	
 	// BlockChain represents the canonical chain given a database with a genesis
 	// block. The Blockchain manages chain imports, reverts, chain reorganisations.
