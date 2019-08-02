@@ -58,3 +58,25 @@ block data stucture:
 |MixDigest|	混合哈希，与nonce 结合使用|
 |Nonce	|加密学中的概念|
 ParentHash 表示该区块的父区块哈希，我们通过 ParentHash 这个字段将一个一个区块连接起来组成区块链，但实际上我们并不会直接将链整个的存起来，它是以一定的数据结构一块一块存放的，geth 的底层数据库用的是 LevelDB，这是一个 key-value 数据库，要得到父区块时，我们通过 ParentHash 以及其他字符串组成 key，在 LevelDB 中查询该 key 对应的值，就能拿到父区块。
+
+### core/types/transaction.go
+<pre><code>type Transaction struct {
+	data txdata
+	// caches
+	hash atomic.Value
+	size atomic.Value
+	from atomic.Value
+}
+type txdata struct {
+	AccountNonce uint64          `json:"nonce"    gencodec:"required"`
+	Price        *big.Int        `json:"gasPrice" gencodec:"required"`
+	GasLimit     uint64          `json:"gas"      gencodec:"required"`
+	Recipient    *common.Address `json:"to"       rlp:"nil"`
+	Amount       *big.Int        `json:"value"    gencodec:"required"`
+	Payload      []byte          `json:"input"    gencodec:"required"`
+	V *big.Int `json:"v" gencodec:"required"`
+	R *big.Int `json:"r" gencodec:"required"`
+	S *big.Int `json:"s" gencodec:"required"`
+	Hash *common.Hash `json:"hash" rlp:"-"`
+}</code></pre>
+转账的定义中只有转入方，转出方的地址没有直接暴露。每一笔转账都有独立的 Price 和 GasLimit，这是 Ethereum 的安全保护策略
