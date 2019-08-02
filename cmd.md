@@ -1,5 +1,5 @@
 # Cmd 
-## file structure
+## File structure
 |文件|package|说明|
 |-----|----------|-----------------------------------------------------------------------------------|
 |cmd  |	         |命令行工具，下面又分了很多的命令行工具|
@@ -18,6 +18,7 @@
 |cmd  |swarm	 |swarm网络的接入点|
 |cmd  |util	 |提供了一些公共的工具,为Go-Ethereum命令提供说明|
 |cmd  |wnode     |这是一个简单的Whisper节点。 它可以用作独立的引导节点。此外，可以用于不同的测试和诊断目的。|
+
 ## Cmd/geth
 geth是ｃｍｄ中最重要的命令，他是以太坊的入口。ｇｅｔｈ的命令行是通过ｕｒｆａｖｅ/cli这个库进行实现的，通过这个库，我们可以轻松定义命令行程序的子命令，命令选项，命令参数，描述信息等等。
 
@@ -584,7 +585,7 @@ dump 子命令可以移除一个或多个特定的区块,先根据区块号获�
 }</code></pre>
 执行 Javascript 文件中的命令(可以为多个文件),通过遍历调用传输的文件路径，执行 console.Execute，执行 js 命令。
 
-## geth/misccmd.go
+### geth/misccmd.go
 <pre><code>func makecache(ctx *cli.Context) error {
 	args := ctx.Args()
 	if len(args) != 2 {
