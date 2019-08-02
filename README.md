@@ -15,7 +15,7 @@
 - [rpc源码分析](/rpc源码分析.md)
 - [p2p源码分析](/p2p源码分析.md)
 - [eth协议源码分析](/eth源码分析.md)
-- core源码分析
+- core文件源码分析
 	- [区块链索引 chain_indexer源码分析](/core-chain_indexer源码解析.md)
 	- [布隆过滤器索引 bloombits源码分析](/core-bloombits源码分析.md)
 	- [以太坊的trie树管理 回滚等操作 state源码分析](/core-state源码分析.md)
