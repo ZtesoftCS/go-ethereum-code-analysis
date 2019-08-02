@@ -148,7 +148,7 @@ GetWork returns a work package for external miner. The work package consists of 
 <pre><code>func (api *API) SubmitWork(nonce types.BlockNonce, hash, digest common.Hash) bool </code></pre>
 SubmitWork can be used by external miner to submit their POW solution. It returns an indication if the work was accepted. Note either an invalid solution, a stale work a non-existent work will return false.
 <pre><code>func (api *API) SubmitHashRate(rate hexutil.Uint64, id common.Hash) bool</code></pre>
-SubmitHashrate can be used for remote miners to submit their hash rate. This enables the node to report the combined hash rate of all miners which submit work through this node.![what is hash rate?](https://www.buybitcoinworldwide.com/mining/hash-rate/), simply  it can be regared as computation.
+SubmitHashrate can be used for remote miners to submit their hash rate. This enables the node to report the combined hash rate of all miners which submit work through this node.[what is hash rate?](https://www.buybitcoinworldwide.com/mining/hash-rate/), simply  it can be regared as computation.
 ### 3.4　ethan/consensus.go
 ethan/consensus.go实现的大多函数是对ｃｏｎｓｅｎｓｕｓ/ｏｎｓｅｎｓｕｓ.go中Ｅｎｇｉｎｅ中的ｉｎｔｅｒｆａｃｅ的函数具体实现.具体功能注释都已经写的很详尽，在此不过多赘述。故只挑了一些进行注释。
 #### ｅｔｈａｎ/consensus.go/VerifyHeaders()
