@@ -17,7 +17,7 @@
 - [eth协议源码分析](/eth源码分析.md)
 - core文件源码分析
 	- [types文件解析](/types.md)
-	- [core/genesis.go](core-genesis.md)
+	- [core/genesis.go](/core-genesis创世区块源码分析.md)
 	- [区块链索引 chain_indexer源码分析](/core-chain_indexer源码解析.md)
 	- [布隆过滤器索引 bloombits源码分析](/core-bloombits源码分析.md)
 	- [以太坊的trie树管理 回滚等操作 state源码分析](/core-state源码分析.md)
