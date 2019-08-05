@@ -1,0 +1,213 @@
+在 internal/ethapi/api.go 中，可以通过 NewAccount 获取新账户，这个 api 可以通过交互式命令行或 rpc 接口调用。
+
+func (s *PrivateAccountAPI) NewAccount(password string) (common.Address, error) {
+	acc, err := fetchKeystore(s.am).NewAccount(password)
+	if err == nil {
+		return acc.Address, nil
+	}
+	return common.Address{}, err
+}
+
+首先调用 fetchKeystore，通过 backends 获得 KeyStore 对象，最后通过调用 keystore.go 中的 NewAccount 获得新账户。
+func (ks *KeyStore) NewAccount(passphrase string) (accounts.Account, error) {
+	_, account, err := storeNewKey(ks.storage, crand.Reader, passphrase)
+	if err != nil {
+		return accounts.Account{}, err
+	}
+	ks.cache.add(account)
+	ks.refreshWallets()
+	return account, nil
+}
+NewAccount 会调用 storeNewKey。
+
+func storeNewKey(ks keyStore, rand io.Reader, auth string) (*Key, accounts.Account, error) {
+	key, err := newKey(rand)
+	if err != nil {
+		return nil, accounts.Account{}, err
+	}
+	a := accounts.Account{Address: key.Address, URL: accounts.URL{Scheme: KeyStoreScheme, Path: ks.JoinPath(keyFileName(key.Address))}}
+	if err := ks.StoreKey(a.URL.Path, key, auth); err != nil {
+		zeroKey(key.PrivateKey)
+		return nil, a, err
+	}
+	return key, a, err
+}
+注意第一个参数是 keyStore，这是一个接口类型。
+
+type keyStore interface {
+	GetKey(addr common.Address, filename string, auth string) (*Key, error)
+	StoreKey(filename string, k *Key, auth string) error
+	JoinPath(filename string) string
+}
+storeNewKey 首先调用 newKey，通过椭圆曲线加密算法获取公私钥对。
+
+func newKey(rand io.Reader) (*Key, error) {
+	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)
+	if err != nil {
+		return nil, err
+	}
+	return newKeyFromECDSA(privateKeyECDSA), nil
+}
+然后会根据参数 ks 的类型调用对应的实现，通过 geth account new 命令创建新账户，调用的就是 accounts/keystore/keystore_passphrase.go 中的实现。即
+
+func (ks keyStorePassphrase) StoreKey(filename string, key *Key, auth string) error {
+	keyjson, err := EncryptKey(key, auth, ks.scryptN, ks.scryptP)
+	if err != nil {
+		return err
+	}
+	return writeKeyFile(filename, keyjson)
+}
+
+我们可以深入到 EncryptKey 中
+func EncryptKey(key *Key, auth string, scryptN, scryptP int) ([]byte, error) {
+	authArray := []byte(auth)
+	salt := randentropy.GetEntropyCSPRNG(32)
+	derivedKey, err := scrypt.Key(authArray, salt, scryptN, scryptR, scryptP, scryptDKLen)
+	if err != nil {
+		return nil, err
+	}
+	encryptKey := derivedKey[:16]
+	keyBytes := math.PaddedBigBytes(key.PrivateKey.D, 32)
+	iv := randentropy.GetEntropyCSPRNG(aes.BlockSize) // 16
+	cipherText, err := aesCTRXOR(encryptKey, keyBytes, iv)
+	if err != nil {
+		return nil, err
+	}
+	mac := crypto.Keccak256(derivedKey[16:32], cipherText)
+	scryptParamsJSON := make(map[string]interface{}, 5)
+	scryptParamsJSON["n"] = scryptN
+	scryptParamsJSON["r"] = scryptR
+	scryptParamsJSON["p"] = scryptP
+	scryptParamsJSON["dklen"] = scryptDKLen
+	scryptParamsJSON["salt"] = hex.EncodeToString(salt)
+	cipherParamsJSON := cipherparamsJSON{
+		IV: hex.EncodeToString(iv),
+	}
+	cryptoStruct := cryptoJSON{
+		Cipher:       "aes-128-ctr",
+		CipherText:   hex.EncodeToString(cipherText),
+		CipherParams: cipherParamsJSON,
+		KDF:          keyHeaderKDF,
+		KDFParams:    scryptParamsJSON,
+		MAC:          hex.EncodeToString(mac),
+	}
+	encryptedKeyJSONV3 := encryptedKeyJSONV3{
+		hex.EncodeToString(key.Address[:]),
+		cryptoStruct,
+		key.Id.String(),
+		version,
+	}
+	return json.Marshal(encryptedKeyJSONV3)
+}
+EncryptKey 的 key 参数是加密的账户，包括 ID，公私钥，地址，auth 参数是用户输入的密码，scryptN 参数是 scrypt 算法中的 N，scryptP 参数是 scrypt 算法中的 P。整个过程，首先对密码使用 scrypt 算法加密，得到加密后的密码 derivedKey，然后用 derivedKey 对私钥使用 AES-CTR 算法加密，得到密文 cipherText，再对 derivedKey 和 cipherText 进行哈希运算得到 mac，mac 起到签名的作用，在解密的时候可以验证合法性，防止别人篡改。EncryptKey 最终返回 json 字符串，Storekey 方法接下来会将其保存在文件中。
+
+列出所有账户
+列出所有账户的入口也在 internal/ethapi/api.go 里。
+func (s *PrivateAccountAPI) ListAccounts() []common.Address {
+	addresses := make([]common.Address, 0) // return [] instead of nil if empty
+	for _, wallet := range s.am.Wallets() {
+		for _, account := range wallet.Accounts() {
+			addresses = append(addresses, account.Address)
+		}
+	}
+	return addresses
+}
+该方法会从 Account Manager 中读取所有钱包信息，获取其对应的所有地址信息。
+
+如果读者对 geth account 命令还有印象的话，geth account 命令还有 update，import 等方法，这里就不再讨论了。
+
+发起转账
+发起一笔转账的函数入口在 internal/ethapi/api.go 中。
+func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {
+	account := accounts.Account{Address: args.From}
+	wallet, err := s.b.AccountManager().Find(account)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	if args.Nonce == nil {
+		s.nonceLock.LockAddr(args.From)
+		defer s.nonceLock.UnlockAddr(args.From)
+	}
+	if err := args.setDefaults(ctx, s.b); err != nil {
+		return common.Hash{}, err
+	}
+	tx := args.toTransaction()
+	var chainID *big.Int
+	if config := s.b.ChainConfig(); config.IsEIP155(s.b.CurrentBlock().Number()) {
+		chainID = config.ChainId
+	}
+	signed, err := wallet.SignTx(account, tx, chainID)
+	if err != nil {
+		return common.Hash{}, err
+	}
+	return submitTransaction(ctx, s.b, signed)
+}
+转账时，首先利用传入的参数 from 构造一个 account，表示转出方。然后通过 accountMananger 的 Find 方法获得这个账户的钱包(Find 方法在上面有介绍)，接下来有一个稍特别的地方。我们知道以太坊采用的是账户余额的体系，对于 UTXO 的方式来说，防止双花的方式很直观，一个输出不能同时被两个输入而引用，这种方式自然而然地就防止了发起转账时可能出现的双花，采用账户系统的以太坊没有这种便利，以太坊的做法是，每个账户有一个 nonce 值，它等于账户累计发起的交易数量，账户发起交易时，交易数据里必须包含 nonce，而且该值必须大于账户的 nonce 值，否则为非法，如果交易的 nonce 值减去账户的 nonce 值大于1，这个交易也不能打包到区块中，这确保了交易是按照一定的顺序执行的。如果有两笔交易有相同 nonce，那么其中只有一笔交易能够成功，通过给 nonce 加锁就是用来防止双花的问题。接着调用 args.setDefaults(ctx, s.b) 方法设置一些交易默认值。最后调用 toTransaction 方法创建交易：
+
+func (args *SendTxArgs) toTransaction() *types.Transaction {
+	var input []byte
+	if args.Data != nil {
+		input = *args.Data
+	} else if args.Input != nil {
+		input = *args.Input
+	}
+	if args.To == nil {
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
+	}
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input)
+}
+这里有两个分支，如果传入的交易的 to 参数不存在，那就表明这是一笔合约转账；如果有 to 参数，就是一笔普通的转账，深入后你会发现这两种转账最终调用的都是 newTransaction
+
+func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *Transaction {
+	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data)
+}
+func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte) *Transaction {
+	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data)
+}
+newTransaction 的功能很简单，实际上就是返回一个 Transaction 实例。我们接着看 SendTransaction 方法接下来的部分。创建好一笔交易，接着我们通过 ChainConfig 方法获得区块链的配置信息，如果是 EIP155 里描述的配置，需要做特殊处理（待深入），然后调用 SignTx 对交易签名来确保这笔交易是真实有效的。SignTx 的接口定义在 accounts/accounts.go 中，这里我们看 keystore 的实现。
+
+func (ks *KeyStore) SignTx(a accounts.Account, tx *types.Transaction, chainID *big.Int) (*types.Transaction, error) {
+	ks.mu.RLock()
+	defer ks.mu.RUnlock()
+	unlockedKey, found := ks.unlocked[a.Address]
+	if !found {
+		return nil, ErrLocked
+	}
+	if chainID != nil {
+		return types.SignTx(tx, types.NewEIP155Signer(chainID), unlockedKey.PrivateKey)
+	}
+	return types.SignTx(tx, types.HomesteadSigner{}, unlockedKey.PrivateKey)
+}
+首先验证账户是否已解锁，若没有解锁，直接报异常退出。接着根据 chainID 判断使用哪一种签名方式，调用相应 SignTx 方法进行签名。
+
+func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, error) {
+	h := s.Hash(tx)
+	sig, err := crypto.Sign(h[:], prv)
+	if err != nil {
+		return nil, err
+	}
+	return tx.WithSignature(s, sig)
+}
+SignTx 的功能是调用椭圆加密函数获得签名，得到带签名的交易后，通过 SubmitTrasaction 提交交易。
+
+
+func submitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (common.Hash, error) {
+	if err := b.SendTx(ctx, tx); err != nil {
+		return common.Hash{}, err
+	}
+	if tx.To() == nil {
+		signer := types.MakeSigner(b.ChainConfig(), b.CurrentBlock().Number())
+		from, err := types.Sender(signer, tx)
+		if err != nil {
+			return common.Hash{}, err
+		}
+		addr := crypto.CreateAddress(from, tx.Nonce())
+		log.Info("Submitted contract creation", "fullhash", tx.Hash().Hex(), "contract", addr.Hex())
+	} else {
+		log.Info("Submitted transaction", "fullhash", tx.Hash().Hex(), "recipient", tx.To())
+	}
+	return tx.Hash(), nil
+}
+submitTransaction 首先调用 SendTx，这个接口在 internal/ethapi/backend.go 中定义，而实现在 eth/api_backend.go 中，这部分代码涉及到交易池，我们在单独的交易池章节进行探讨，这里就此打住。
+
+将交易写入交易池后，如果没有因错误退出，submitTransaction 会完成提交交易，返回交易哈希值。发起交易的这个过程就结束了，剩下的就交给矿工将交易上链。
