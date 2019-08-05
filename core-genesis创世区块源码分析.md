@@ -1,3 +1,5 @@
+# core/genesis.go
+
 genesis 是创世区块的意思. 一个区块链就是从同一个创世区块开始,通过规则形成的.不同的网络有不同的创世区块, 主网络和测试网路的创世区块是不同的.
 
 这个模块根据传入的genesis的初始值和database，来设置genesis的状态，如果不存在创世区块，那么在database里面创建它。
@@ -28,6 +30,16 @@ genesis 是创世区块的意思. 一个区块链就是从同一个创世区块�
 	// GenesisAlloc specifies the initial state that is part of the genesis block.
 	// GenesisAlloc 指定了最开始的区块的初始状态.
 	type GenesisAlloc map[common.Address]GenesisAccount
+
+genesisaccount,
+<pre><code>type GenesisAlloc map[common.Address]GenesisAccount
+type GenesisAccount struct {
+	Code       []byte                      `json:"code,omitempty"`
+	Storage    map[common.Hash]common.Hash `json:"storage,omitempty"`
+	Balance    *big.Int                    `json:"balance" gencodec:"required"`
+	Nonce      uint64                      `json:"nonce,omitempty"`
+	PrivateKey []byte                      `json:"secretKey,omitempty"`
+}</code></pre>
 
 
 SetupGenesisBlock,
@@ -115,9 +127,9 @@ SetupGenesisBlock,
 		// 如果是主网络会从这里退出。
 		return newcfg, stored, WriteChainConfig(db, stored, newcfg)
 	}
+SetupGenesisBlock 会根据创世区块返回一个区块链的配置。从 db 参数中拿到的区块里如果没有创世区块的话，首先提交一个新区块。接着通过调用 genesis.configOrDefault(stored) 拿到当前链的配置，测试兼容性后将配置写回 DB 中。最后返回区块链的配置信息。
 
-
-ToBlock, 这个方法使用genesis的数据，使用基于内存的数据库，然后创建了一个block并返回。
+ToBlock, 这个方法使用genesis的数据，使用基于内存的数据库，然后创建了一个block并返回(通过 types.NewBlock）
 	
 	
 	// ToBlock creates the block and state of a genesis specification.
