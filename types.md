@@ -21,6 +21,7 @@ block data stucture:
 |td	|当前区块高度|
 |ReceivedAt|	接收时间|
 |ReceivedFrom|	来源|
+
 交易组成区块，一个一个区块以单向链表的形式连在一起组成区块链
 </br>Ｈｅａｄｅｒ data structure:
 <pre><code>type Header struct {
