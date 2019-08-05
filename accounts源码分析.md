@@ -212,7 +212,7 @@ ABI是Application Binary Interface的缩写，字面意思 应用二进制接口
 		// 订阅创建异步订阅，以便在后端检测到钱包的到达或离开时接收通知。
 		Subscribe(sink chan<- WalletEvent) event.Subscription
 	}
-
+Backend 接口是一个钱包 provider，它包含一个钱包列表，在检测到钱包开启或关闭时可以接收到通知，可以用来请求签名交易。其中 Wallets() 返回当前可用的钱包，按字母顺序排序，Subscribe() 创建异步订阅的方法，当钱包发生变动时通过 chan 接收消息。
 
 ## manager.go
 Manager是一个包含所有东西的账户管理工具。 可以和所有的Backends来通信来签署交易。
@@ -236,7 +236,7 @@ Manager是一个包含所有东西的账户管理工具。 可以和所有的Bac
 		quit chan chan error
 		lock sync.RWMutex
 	}
-
+其中 backends 是当前已注册的所有 Backend，updaters 是所有 Backend 的更新订阅器，updates 是 Backend 对应 wallet 事件更新的 chan，wallets 是所有已经注册的 Backends 的钱包的缓存，feed 用于钱包事件的通知，quit 用于退出的事件。manager.go 的代码没有什么很特别的地方，有兴趣的话可以自行查看源代码，这里只做概述。这里只挑几个典型的，下面讲解业务实例时会用到的方法。
 
 创建Manager
 
@@ -272,8 +272,9 @@ Manager是一个包含所有东西的账户管理工具。 可以和所有的Bac
 	
 		return am
 	}
+NewManager 会将所有 backends 的 wallets 收集起来，获取所有的 backends 的时间订阅，然后根据这些参数创建新的 manager。
 
-update方法。 是一个goroutine。会监听所有backend触发的更新信息。 然后转发给feed.
+update在 NewManager 作为一个 goroutine 被调用，一直运行，监控所有 backend 触发的更新消息，发给 feed 用来进行进一步的处理。
 
 	// update is the wallet event loop listening for notifications from the backends
 	// and updating the cache of wallets.
@@ -330,7 +331,7 @@ update方法。 是一个goroutine。会监听所有backend触发的更新信息
 	}
 
 
-对于node来说。是什么时候创建的账号管理器。
+对node来说是什么时候创建的账号管理器
 
 	// New creates a new P2P node, ready for protocol registration.
 	func New(conf *Config) (*Node, error) {
@@ -397,3 +398,26 @@ update方法。 是一个goroutine。会监听所有backend触发的更新信息
 		}
 		return accounts.NewManager(backends...), ephemeral, nil
 	}
+
+首先获取配置信息，通过 getPassPhrase 获取密码后，通过 keystore.StoreKey 获得账户地址
+<pre><code>
+unc accountCreate(ctx *cli.Context) error {
+	cfg := gethConfig{Node: defaultNodeConfig()}
+	if file := ctx.GlobalString(configFileFlag.Name); file != "" {
+		if err := loadConfig(file, &cfg); err != nil {
+			utils.Fatalf("%v", err)
+		}
+	}
+	utils.SetNodeConfig(ctx, &cfg.Node)
+	scryptN, scryptP, keydir, err := cfg.Node.AccountConfig()
+	if err != nil {
+		utils.Fatalf("Failed to read configuration: %v", err)
+	}
+	password := getPassPhrase("Your new account is locked with a password. Please give a password. Do not forget this password.", true, 0, utils.MakePasswordList(ctx))
+	address, err := keystore.StoreKey(keydir, password, scryptN, scryptP)
+	if err != nil {
+		utils.Fatalf("Failed to create account: %v", err)
+	}
+	fmt.Printf("Address: {%x}\n", address)
+	return nil
+}</code></pre>
