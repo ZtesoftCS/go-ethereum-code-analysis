@@ -18,6 +18,7 @@
 - core文件源码分析
 	- [types文件解析](/types.md)
 	- [core/genesis.go](/core-genesis创世区块源码分析.md)
+	- [core/blockchain.go](/core-blockchain源码分析.md)
 	- [区块链索引 chain_indexer源码分析](/core-chain_indexer源码解析.md)
 	- [布隆过滤器索引 bloombits源码分析](/core-bloombits源码分析.md)
 	- [以太坊的trie树管理 回滚等操作 state源码分析](/core-state源码分析.md)
@@ -30,7 +31,6 @@
 		- [交易执行和处理部分源码分析](/core-txlist交易池的一些数据结构源码分析.md)
 		- [交易执行和处理部分源码分析](/core-txpool交易池源码分析.md)
 	- [创世区块的源码分析](/core-genesis创世区块源码分析.md)
-	- [blockchain 源码分析](/core-blockchain源码分析.md)
 - [miner挖矿部分源码分析CPU挖矿](/miner挖矿部分源码分析CPU挖矿.md)
 - [pow一致性算法](/pow一致性算法.md)
 - [以太坊测试网络Clique_PoA介绍](/以太坊测试网络Clique_PoA介绍.md)
