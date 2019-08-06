@@ -1,3 +1,4 @@
+# core/blockchain.go
 从测试案例来看,blockchain的主要功能点有下面几点.
 
 1. import.
@@ -9,15 +10,15 @@
 7. 支持Fast importing.
 8. Light vs Fast vs Full processing 在处理区块头上面的效果相等.
 
-可以看到blockchain的主要功能是维护区块链的状态, 包括区块的验证,插入和状态查询.
+blockchain的主要功能是维护区块链的状态, 包括区块的验证,插入和状态查询.
 
-名词解释:
+>名词解释:
 
-什么是规范的区块链
+>什么是规范的区块链
 
-因为在区块的创建过程中,可能在短时间内产生一些分叉, 在我们的数据库里面记录的其实是一颗区块树.我们会认为其中总难度最高的一条路径认为是我们的规范的区块链. 这样有很多区块虽然也能形成区块链,但是不是规范的区块链.
+>因为在区块的创建过程中,可能在短时间内产生一些分叉, 在我们的数据库里面记录的其实是一颗区块树.我们会认为其中总难度最高的一条路径认为是我们的规范的区块链. 这样有很多区块虽然也能形成区块链,但是不是规范的区块链.
 
-数据库结构:
+**数据库结构:**
 
 	区块的hash值和区块头的hash值是同样的么。所谓的区块的Hash值其实就是Header的区块值。
 	// key -> value
@@ -57,6 +58,7 @@ key | value|说明|插入|删除|
 
 数据结构
 
+Blockchian structure:
 	
 	// BlockChain represents the canonical chain given a database with a genesis
 	// block. The Blockchain manages chain imports, reverts, chain reorganisations.
@@ -179,6 +181,8 @@ key | value|说明|插入|删除|
 		go bc.update()
 		return bc, nil
 	}
+	
+BlockChain 的初始化需要 ethdb.Database, *CacheConfig, params.ChainConfig， consensus.Engine，vm.Config 参数。它们分别表示 db 对象；缓存配置（在 core/blockchain.go 中定义）；区块链配置（可通过 core/genesis.go 中的 SetupGenesisBlock 拿到）；一致性引擎（可通过 core/blockchain.go 中的 CreateConsensusEngine 得到）；虚拟机配置（通过 core/vm 定义）这些实参需要提前定义.回到 NewBlockChain 的具体代码，首先判断是否有默认 cacheConfig，如果没有根据默认配置创建 cacheConfig，再通过 hashicorp 公司的 lru 模块创建 bodyCache, bodyRLPCache 等缓存对象（lru 是 last recently used 的缩写，常见数据结构，不了解的朋友请自行查阅相关资料），根据这些信息创建 BlockChain 对象，然后通过调用 BlockChain 的 SetValidator 和 SetProcessor 方法创建验证器和处理器，接下来通过 NewHeaderChain 获得区块头，尝试判断创始区块是否存在，bc.loadLastState() 加载区块最新状态，最后检查当前状态，确保本地运行的区块链上没有非法的区块。
 
 loadLastState, 加载数据库里面的最新的我们知道的区块链状态. 这个方法假设已经获取到锁了.
 	
@@ -242,7 +246,9 @@ loadLastState, 加载数据库里面的最新的我们知道的区块链状态. 
 		return nil
 	}
 
-goroutine update的处理非常简单. 定时处理future blocks.
+loadLastState 会从数据库中加载区块链状态，首先通过 GetHeadBlockHash 从数据库中取得当前区块头，如果当前区块不存在，即数据库为空的话，通过 Reset 将创始区块写入数据库以达到重置目的。如果当前区块不存在，同样通过 Reset 重置。接下来确认当前区块的世界状态是否正确;如果有问题，则通过 repair 进行修复，repair 中是一个死循环，它会一直回溯当前区块，直到找到对应的世界状态。然后通过 bc.hc.SetCurrentHeader 设置当前区块头，并恢复快速同步区块。
+
+update() 的作用是定时处理 Future 区块，简单地来说就是定时调用 procFutureBlocks。procFutureBlocks 可以从 futureBlocks 拿到需要插入的区块，最终会调用 InsertChain 将区块插入到区块链中。
 	
 	func (bc *BlockChain) update() {
 		futureTimer := time.Tick(5 * time.Second)
@@ -347,8 +353,8 @@ SetHead将本地链回卷到新的头部。 在给定新header之上的所有内
 		return bc.loadLastState()
 	}
 
-InsertChain,插入区块链, 插入区块链尝试把给定的区块插入到规范的链条,或者是创建一个分叉. 如果发生错误,那么会返回错误发生时候的index和具体的错误信息.
-	
+InsertChain 将尝试将给定的区块插入到规范的区块链中，或者创建一个分支，插入后，会通过 PostChainEvents 触发所有事件
+
 	// InsertChain attempts to insert the given batch of blocks in to the canonical
 	// chain or, otherwise, create a fork. If an error is returned it will return
 	// the index number of the failing block as well an error describing what went
@@ -519,6 +525,7 @@ insertChain方法会执行区块链插入,并收集事件信息. 因为需要使
 		}
 		return 0, events, coalescedLogs, nil
 	}
+首先做一个健康检查，确保要插入的链是有序且相互连接的。接下来通过 bc.engine.VerifyHeaders 调用一致性引擎来验证区块头是有效的。进入 for i, block := range chain 循环后，接收 results 这个 chan，可以获得一致性引擎获得区块头的结果，如果是已经插入的区块，跳过；如果是未来的区块，时间距离不是很长，加入到 futureBlocks 中，否则返回一条错误信息；如果没能找到该区块祖先，但在 futureBlocks 能找到，也加入到 futureBlocks 中。加入 futureBlocks 的过程结束后，通过 core/state_processor.go 中的 Process 改变世界状态. 在返回收据，日志，使用的 Gas 后。通过 bc.Validator().ValidateState 再次验证，通过后，通过 WriteBlockAndState 写入区块以及相关状态到区块链。最后，如果生成了一个新的区块头，最新的区块头等于 lastCanon 的哈希值，发布一个 ChainHeadEvent 的事件。
 
 WriteBlockAndState,把区块写入区块链. 
 	
@@ -600,6 +607,7 @@ WriteBlockAndState,把区块写入区块链.
 		bc.futureBlocks.Remove(block.Hash())
 		return status, nil
 	}
+WriteBlockWithState 将区块以及相关所有的状态写入数据库。首先通过 bc.GetTd(block.ParentHash(), block.NumberU64()-1) 获取待插入区块的总难度，bc.GetTd(bc.currentBlock.Hash(), bc.currentBlock.NumberU64()) 计算当前区块的区块链的总难度，externTd := new(big.Int).Add(block.Difficulty(), ptd) 获得新的区块链的总难度。通过 bc.hc.WriteTd(block.Hash(), block.NumberU64(), externTd) 写入区块 hash，高度，对应总难度。然后使用 batch 的方式写入区块的其他数据。插入数据后，判断这个区块的父区块是否为当前区块，如果不是，说明存在分叉，调用 reorg 重新组织区块链。插入成功后，调用 bc.futureBlocks.Remove(block.Hash()) 从 futureBlocks 中移除区块。
 
 
 reorgs方法是在新的链的总难度大于本地链的总难度的情况下，需要用新的区块链来替换本地的区块链为规范链。
@@ -722,4 +730,4 @@ reorgs方法是在新的链的总难度大于本地链的总难度的情况下�
 	
 		return nil
 	}
-
+reorg 方法用来将新区块链替换本地区块链为规范链。对于老链比新链高的情况，减少老链，让它和新链一样高；否则的话减少新链，待后续插入。潜在的会丢失的交易会被当做事件发布。接着进入一个 for 循环，找到两条链共同的祖先。再将上述减少新链阶段保存的 newChain 一块块插入到链中，更新规范区块链的 key，并且写入交易的查询信息。最后是清理工作，删除交易查询信息，删除日志，并通过 bc.rmLogsFeed.Send 发送消息通知，删除了哪些旧链则通过 bc.chainSideFeed.Send 进行消息通知。
