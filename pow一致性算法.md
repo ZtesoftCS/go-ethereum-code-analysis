@@ -1,4 +1,4 @@
-##eth POW分析
+## eth POW分析
 ### 共识引擎描述
 在CPU挖矿部分，CpuAgent的mine函数，执行挖矿操作的时候调用了self.engine.Seal函数。这里的engine是就是共识引擎。Seal为其中很重要的一个接口。它实现了nonce值的寻找和hash的计算。并且该函数是保证共识并且不能伪造的一个重要的函数。
 再PoW共识算法中，Seal函数实现了工作证明。该部分源码在consensus/ethhash下。
