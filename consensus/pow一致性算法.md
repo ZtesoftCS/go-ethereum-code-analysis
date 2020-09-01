@@ -163,7 +163,19 @@ func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *
 	return nil
 }
 ```
-Ethash通过CalcDifficulty函数计算下一个区块难度，分别为不同阶段的难度创建了不同的难度计算方法，这里暂不展开描述
+Ethash通过CalcDifficulty函数计算下一个区块难度，分别为不同阶段的难度创建了不同的难度计算
+有三种计算难度的规则，分别对应以太坊的三个主要版本：已经成为历史的Frontier、正在使用的Homestead和将要发布的Metropolicy
+计算一个区块的难度时，需要以下输入:
+	parent_timestamp：上一个区块产生的时间
+	parent_diff：上一个区块的难度
+	block_timestamp：当前区块产生的时间
+	block_number：当前区块的序号
+	block_diff = parent_diff + 难度调整 + 难度炸弹
+难度调整 = parent_diff // 2048 * MAX(1 - (block_timestamp - parent_timestamp) // 10, -99)
+难度炸弹 = INT(2**((block_number // 100000) - 2))
+另外，区块难度不能低于以太坊的创世区块，创世区块的难度为131072，这是以太坊难度的下限。
+
+以太坊的区块难度以单个区块为单位进行调整，可以非常迅速的适应算力的变化，正是这种机制，使以太坊在硬分叉出以太坊经典(ETC)以后没有出现比特币分叉出比特币现金(BCC)后的算力“暴击”问题
 ```
 func (ethash *Ethash) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *types.Header) *big.Int {
 	return CalcDifficulty(chain.Config(), time, parent)
