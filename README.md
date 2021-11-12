@@ -5,7 +5,6 @@
 分析[go-ethereum](https://github.com/ethereum/go-ethereum)的过程，我希望从依赖比较少的底层技术组件开始，慢慢深入到核心逻辑。
 
 ## 目录
-
 - [go-ethereum代码阅读环境搭建](/go-ethereum源码阅读环境搭建.md)
 - [以太坊黄皮书 符号索引](a黄皮书里面出现的所有的符号索引.md)
 - [rlp源码解析](/rlp源码解析.md)
@@ -31,3 +30,5 @@
 - [miner挖矿部分源码分析CPU挖矿](/miner挖矿部分源码分析CPU挖矿.md)
 - [pow一致性算法](/consensus/pow一致性算法.md)
 - [以太坊测试网络Clique_PoA介绍](/以太坊测试网络Clique_PoA介绍.md)
+
+[other useful link](https://github.com/XChainLab/documentation)
