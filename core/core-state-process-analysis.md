@@ -1,6 +1,7 @@
 #以太坊交易执行分析
-**说明：**  在go-ethereum-code-analysis目录下已有一些分析，基本涵盖了交易的执行过程。见 [core-state-process源码分析.md](../go-ethereum-code-analysis/core-state-process源码分析.md)  
-[core-state源码分析.md](../go-ethereum-code-analysis/core-state源码分析.md)  
+**说明：**  在go-ethereum-code-analysis目录下已有一些分析，基本涵盖了交易的执行过程。见 
+[core-state-process源码分析](../core/core-state-process源码分析.md)  
+[core-state源码分析](../core/core-state源码分析.md)  
 
 在这里，将其整体串起来，从state_processor.Process函数开始，归纳一下其所作的处理。
 
