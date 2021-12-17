@@ -5,7 +5,7 @@
 
 在这里，将其整体串起来，从state_processor.Process函数开始，归纳一下其所作的处理。
 
-##1 Process
+## 1 Process
 Process 根据以太坊规则运行交易信息来对statedb进行状态改变，以及奖励挖矿者或者是其他的叔父节点。  
 Process 返回执行过程中累计的收据和日志，并返回过程中使用的Gas。如果由于Gas不足而导致任何交易执行失败，将返回错误。  
 
@@ -22,7 +22,7 @@ Process 返回执行过程中累计的收据和日志，并返回过程中使用
 5. 返回所有的收据、日志、总共使用的gas。
 ~~~
 
-##2 ApplyTransaction(1.3.b )
+## 2 ApplyTransaction(1.3.b )
 ApplyTransaction尝试将交易应用于给定的状态数据库，并使用输入参数作为其环境。  
 它返回交易的收据，使用的Gas和错误，如果交易失败，表明块是无效的。  
 **处理逻辑：**  
@@ -37,7 +37,7 @@ ApplyTransaction尝试将交易应用于给定的状态数据库，并使用输�
 8. 拿到所有的日志并创建日志的布隆过滤器；返回。
 ~~~  
 
-##3 ApplyMessage（2.4）
+## 3 ApplyMessage（2.4）
 ApplyMessage将交易应用于当前的状态中，代码里就是创建了一个StateTransition然后调用其TransitionDb()方法。
 ApplyMessage返回由任何EVM执行（如果发生）返回的字节（但这个返回值在ApplyTransaction中被忽略了），
 使用的Gas（包括Gas退款），如果失败则返回错误。 一个错误总是表示一个核心错误，
@@ -54,7 +54,7 @@ ApplyMessage返回由任何EVM执行（如果发生）返回的字节（但这�
 5. 计算并执行退款，将退回的gas对应的以太币退回给交易发送者。
 ~~~
 
-###4.3 evm.Create创建新的合约
+### 4.3 evm.Create创建新的合约
 ~~~
 1. 检查执行深度，若超过params.CallCreateDepth（即1024）就出错返回；刚开始的执行深度为0，肯定继续往下执行；  
 2. 检查是否可执行转账，即检查账户余额是否≥要转账的数额；
@@ -68,7 +68,7 @@ ApplyMessage返回由任何EVM执行（如果发生）返回的字节（但这�
 10. 若EVM返回错误或上述存储返回值出现错误，则回滚到快照的状态，并且消耗完剩下的所有gas。
 ~~~
 
-###4.4 evm.Call执行交易
+### 4.4 evm.Call执行交易
 Call方法, 无论我们转账或者是执行合约代码都会调用到这里， 同时合约里面的call指令也会执行到这里。  
 Call方法和evm.Create的逻辑类似，但少了一些步骤。
 ~~~
