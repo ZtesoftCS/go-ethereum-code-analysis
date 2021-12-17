@@ -43,7 +43,7 @@ ApplyMessage返回由任何EVM执行（如果发生）返回的字节（但这�
 使用的Gas（包括Gas退款），如果失败则返回错误。 一个错误总是表示一个核心错误，
 意味着这个消息对于这个特定的状态将总是失败，并且永远不会在一个块中被接受。
 
-##4 StateTransition.TransitionDb()
+## 4 StateTransition.TransitionDb()
 ~~~
 1. 预检查，出错则函数返回；
     a. 检查交易的Nonce值是否合规；
