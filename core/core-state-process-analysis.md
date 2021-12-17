@@ -1,13 +1,14 @@
 #以太坊交易执行分析
-**说明：**  在go-ethereum-code-analysis目录下已有一些分析，基本涵盖了交易的执行过程。见 
-[core-state-process源码分析](../core/core-state-process源码分析.md)  
-[core-state源码分析](../core/core-state源码分析.md)  
+**说明：**  在go-ethereum-code-analysis目录下已有一些分析，基本涵盖了交易的执行过程。具体见：
+1. [core-state-process源码分析](../core/core-state-process源码分析.md)  
+2. [core-state源码分析](../core/core-state源码分析.md)  
 
 在这里，将其整体串起来，从state_processor.Process函数开始，归纳一下其所作的处理。
 
 ##1 Process
 Process 根据以太坊规则运行交易信息来对statedb进行状态改变，以及奖励挖矿者或者是其他的叔父节点。  
-Process返回执行过程中累计的收据和日志，并返回过程中使用的Gas。 如果由于Gas不足而导致任何交易执行失败，将返回错误。  
+Process 返回执行过程中累计的收据和日志，并返回过程中使用的Gas。如果由于Gas不足而导致任何交易执行失败，将返回错误。  
+
 **处理逻辑：**
 ~~~
 1. 定义及初始化收据、耗费的gas、区块头、日志、gas池等变量；
