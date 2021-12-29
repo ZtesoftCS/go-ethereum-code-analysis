@@ -23,12 +23,13 @@
 		- [虚拟机指令,跳转表,解释器源码分析](/core/core-vm-jumptable-instruction.md)
 		- [虚拟机源码分析](/core/core-vm源码分析.md)
 	- 待确认交易池的管理txPool
-		- [交易执行和处理部分源码分析](/core/core-txlist交易池的一些数据结构源码分析.md)
-		- [交易执行和处理部分源码分析](/core/core-txpool交易池源码分析.md)
+		- [txlist 交易执行和处理部分源码分析](/core/core-txlist交易池的一些数据结构源码分析.md)
+		- [txpool 交易执行和处理部分源码分析](/core/core-txpool交易池源码分析.md)
 	- [创世区块的源码分析](/core/core-genesis创世区块源码分析.md)
 	- [blockchain 源码分析](/core/core-blockchain源码分析.md)
 - [miner挖矿部分源码分析CPU挖矿](/miner挖矿部分源码分析CPU挖矿.md)
 - [pow一致性算法](/consensus/pow一致性算法.md)
 - [以太坊测试网络Clique_PoA介绍](/以太坊测试网络Clique_PoA介绍.md)
 
-[other useful link](https://github.com/XChainLab/documentation)
+[☞other useful link 1](https://github.com/XChainLab/documentation)
+[☞other useful link 2](https://github.com/lbc-team/deep_ethereum)
