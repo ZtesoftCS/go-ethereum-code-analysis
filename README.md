@@ -31,5 +31,6 @@
 - [pow一致性算法](/consensus/pow一致性算法.md)
 - [以太坊测试网络Clique_PoA介绍](/以太坊测试网络Clique_PoA介绍.md)
 
-[☞other useful link 1](https://github.com/XChainLab/documentation)
-[☞other useful link 2](https://github.com/lbc-team/deep_ethereum)
+####
+- [☞other useful link 1](https://github.com/XChainLab/documentation) 
+- [☞other useful link 2](https://github.com/lbc-team/deep_ethereum) 
