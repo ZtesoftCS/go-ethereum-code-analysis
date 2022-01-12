@@ -8,11 +8,11 @@
 - [go-ethereum代码阅读环境搭建](/go-ethereum源码阅读环境搭建.md)
 - [以太坊黄皮书 符号索引](a黄皮书里面出现的所有的符号索引.md)
 - [rlp源码解析](/rlp源码解析.md)
-- [trie源码分析](/trie源码分析.md)
+- [trie源码分析](/net/trie源码分析.md)
 - [ethdb源码分析](/net/ethdb源码分析.md)
 - [rpc源码分析](/rpc/rpc源码分析.md)
 - [p2p源码分析](/p2p/p2p源码分析.md)
-- [eth协议源码分析](/eth源码分析.md)
+- [eth协议源码分析](/net/eth源码分析.md)
 - core源码分析
 	- [区块链索引 chain_indexer源码分析](/core/core-chain_indexer源码解析.md)
 	- [布隆过滤器索引 bloombits源码分析](/core/core-bloombits源码分析.md)
