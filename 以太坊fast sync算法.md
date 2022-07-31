@@ -8,7 +8,7 @@ This PR aggregates a lot of small modifications to core, trie, eth and other pac
 
 The goal of the the fast sync algorithm is to exchange processing power for bandwidth usage. Instead of processing the entire block-chain one link at a time, and replay all transactions that ever happened in history, fast syncing downloads the transaction receipts along the blocks, and pulls an entire recent state database. This allows a fast synced node to still retain its status an an archive node containing all historical data for user queries (and thus not influence the network's health in general), but at the same time to reassemble a recent network state at a fraction of the time it would take full block processing.
 
-快速同步算法的目标是用带宽换计算。 快速同步不是通过一个链接处理整个区块链，而是重放历史上发生的所有事务，快速同步会沿着这些块下载事务处理单据，然后拉取整个最近的状态数据库。 这允许快速同步的节点仍然保持其包含用于用户查询的所有历史数据的存档节点的状态（并且因此不会一般地影响网络的健康状况），对于最新的区块状态更改，会使用全量的区块处理方式。
+快速同步算法的目标是用带宽换计算。 快速同步不是通过一个链接处理整个区块链，而是重放历史上发生的所有交易，快速同步会沿着这些块下载交易处理单据，然后拉取整个最近的状态数据库。 这允许快速同步的节点仍然保持其包含用于用户查询的所有历史数据的存档节点的状态（并且因此不会一般地影响网络的健康状况），对于最新的区块状态更改，会使用全量的区块处理方式。
 
 An outline of the fast sync algorithm would be:
 
@@ -42,7 +42,7 @@ By downloading and verifying the entire header chain, we can guarantee with all 
 ## 注意事项 Caveats
 The historical block-processing based synchronization mechanism has two (approximately similarly costing) bottlenecks: transaction processing and PoW verification. The baseline fast sync algorithm successfully circumvents the transaction processing, skipping the need to iterate over every single state the system ever was in. However, verifying the proof of work associated with each header is still a notably CPU intensive operation.
 
-基于历史块处理的同步机制具有两个（近似相似成本）瓶颈：交易处理和PoW验证。 基线快速同步算法成功地绕开了事务处理，跳过了对系统曾经处于的每一个状态进行迭代的需要。但是，验证与每个头相关联的工作证明仍然是CPU密集型操作。
+基于历史块处理的同步机制具有两个（近似相似成本）瓶颈：交易处理和PoW验证。 基线快速同步算法成功地绕开了交易处理，跳过了对系统曾经处于的每一个状态进行迭代的需要。但是，验证与每个头相关联的工作证明仍然是CPU密集型操作。
 
 However, we can notice an interesting phenomenon during header verification. With a negligible probability of error, we can still guarantee the validity of the chain, only by verifying every K-th header, instead of each and every one. By selecting a single header at random out of every K headers to verify, we guarantee the validity of an N-length chain with the probability of (1/K)^(N/K) (i.e. we have 1/K chance to spot a forgery in K blocks, a verification that's repeated N/K times).
 
@@ -82,7 +82,7 @@ Blockchain protocols in general (i.e. Bitcoin, Ethereum, and the others) are sus
 
 Compared to the classical Sybil attack, fast sync provides such an attacker with an extra ability, that of feeding a node a view of the network that's not only different from the real network, but also that might go around the EVM mechanics. The Ethereum protocol only validates state root hashes by processing all the transactions against the previous state root. But by skipping the transaction processing, we cannot prove that the state root contained within the fast sync pivot point is valid or not, so as long as an attacker can maintain a fake blockchain that's on par with the real network, it could create an invalid view of the network's state.
 
-与传统的女巫攻击相比，快速同步为攻击者提供了一种额外的能力，即为节点提供一个不仅与真实网络不同的网络视图，而且还可能绕过EVM机制。 以太坊协议只通过处理所有事务与以前的状态根来验证状态根散列。 但是通过跳过事务处理，我们无法证明快速同步pivot point中包含的state root是否有效，所以只要攻击者能够保持与真实网络相同的假区块链，就可以创造一个无效的网络状态视图。
+与传统的女巫攻击相比，快速同步为攻击者提供了一种额外的能力，即为节点提供一个不仅与真实网络不同的网络视图，而且还可能绕过EVM机制。 以太坊协议只通过处理所有交易与以前的状态根来验证状态根散列。 但是通过跳过交易处理，我们无法证明快速同步pivot point中包含的state root是否有效，所以只要攻击者能够保持与真实网络相同的假区块链，就可以创造一个无效的网络状态视图。
 
 To avoid opening up nodes to this extra attacker ability, fast sync (beside being solely opt-in) will only ever run during an initial sync (i.e. when the node's own blockchain is empty). After a node managed to successfully sync with the network, fast sync is forever disabled. This way anybody can quickly catch up with the network, but after the node caught up, the extra attack vector is plugged in. This feature permits users to safely use the fast sync flag (--fast), without having to worry about potential state root attacks happening to them in the future. As an additional safety feature, if a fast sync fails close to or after the random pivot point, fast sync is disabled as a safety precaution and the node reverts to full, block-processing based synchronization.
 
