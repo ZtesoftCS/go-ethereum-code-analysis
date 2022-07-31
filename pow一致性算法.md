@@ -7,6 +7,7 @@
 
 ### 共识引擎接口
 
+```go
 type Engine interface {
 // 获取区块挖掘者, 即 coinbase
 Author(header \*types.Header) (common.Address, error)
@@ -43,12 +44,13 @@ Author(header \*types.Header) (common.Address, error)
     APIs(chain ChainReader) []rpc.API
 
 }
+```
 
 ### ethhash 实现分析
 
 #### ethhash 结构体
 
-```
+```go
 type Ethash struct {
 	config Config
 
@@ -79,7 +81,7 @@ Ethhash 是实现 PoW 的具体实现，由于要使用到大量的数据集，�
 
 Athor 方法获取了挖出这个块的矿工地址。
 
-```
+```go
 func (ethash *Ethash) Author(header *types.Header) (common.Address, error) {
 	return header.Coinbase, nil
 }
@@ -87,7 +89,7 @@ func (ethash *Ethash) Author(header *types.Header) (common.Address, error) {
 
 VerifyHeader 用于校验区块头部信息是否符合 ethash 共识引擎规则。
 
-```
+```go
 // VerifyHeader checks whether a header conforms to the consensus rules of the
 // stock Ethereum ethash engine.
 func (ethash *Ethash) VerifyHeader(chain consensus.ChainReader, header *types.Header, seal bool) error {
@@ -109,9 +111,9 @@ func (ethash *Ethash) VerifyHeader(chain consensus.ChainReader, header *types.He
 }
 ```
 
-然后再看看 verifyHeader 的实现,
+然后再看看 verifyHeader 的实现：
 
-```
+```go
 func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *types.Header, uncle bool, seal bool) error {
 	// 确保额外数据段具有合理的长度
 	if uint64(len(header.Extra)) > params.MaximumExtraDataSize {
@@ -179,7 +181,7 @@ func (ethash *Ethash) verifyHeader(chain consensus.ChainReader, header, parent *
 
 Ethash 通过 CalcDifficulty 函数计算下一个区块难度，分别为不同阶段的难度创建了不同的难度计算方法，这里暂不展开描述
 
-```
+```go
 func (ethash *Ethash) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *types.Header) *big.Int {
 	return CalcDifficulty(chain.Config(), time, parent)
 }
@@ -199,7 +201,7 @@ func CalcDifficulty(config *params.ChainConfig, time uint64, parent *types.Heade
 
 VerifyHeaders 和 VerifyHeader 类似，只是 VerifyHeaders 进行批量校验操作。创建多个 goroutine 用于执行校验操作，再创建一个 goroutine 用于赋值控制任务分配和结果获取。最后返回一个结果 channel
 
-```
+```go
 func (ethash *Ethash) VerifyHeaders(chain consensus.ChainReader, headers []*types.Header, seals []bool) (chan<- struct{}, <-chan error) {
 	// If we're running a full engine faking, accept any input as valid
 	if ethash.config.PowMode == ModeFullFake || len(headers) == 0 {
@@ -268,7 +270,7 @@ func (ethash *Ethash) VerifyHeaders(chain consensus.ChainReader, headers []*type
 
 VerifyHeaders 在校验单个区块头的时候使用了 verifyHeaderWorker，该函数获取父区块后，调用 verifyHeader 进行校验
 
-```
+```go
 func (ethash *Ethash) verifyHeaderWorker(chain consensus.ChainReader, headers []*types.Header, seals []bool, index int) error {
 	var parent *types.Header
 	if index == 0 {
@@ -289,7 +291,7 @@ func (ethash *Ethash) verifyHeaderWorker(chain consensus.ChainReader, headers []
 
 VerifyUncles 用于叔块的校验。和校验区块头类似，叔块校验在 ModeFullFake 模式下直接返回校验成功。获取所有的叔块，然后遍历校验，校验失败即终止，或者校验完成返回。
 
-```
+```go
 func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Block) error {
 	// If we're running a full engine faking, accept any input as valid
 	if ethash.config.PowMode == ModeFullFake {
@@ -343,7 +345,7 @@ func (ethash *Ethash) VerifyUncles(chain consensus.ChainReader, block *types.Blo
 
 Prepare 实现共识引擎的 Prepare 接口，用于填充区块头的难度字段，使之符合 ethash 协议。这个改变是在线的。
 
-```
+```go
 func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header) error {
 	parent := chain.GetHeader(header.ParentHash, header.Number.Uint64()-1)
 	if parent == nil {
@@ -356,7 +358,7 @@ func (ethash *Ethash) Prepare(chain consensus.ChainReader, header *types.Header)
 
 Finalize 实现共识引擎的 Finalize 接口,奖励挖到区块账户和叔块账户，并填充状态树的根的值。并返回新的区块。
 
-```
+```go
 func (ethash *Ethash) Finalize(chain consensus.ChainReader, header *types.Header, state *state.StateDB, txs []*types.Transaction, uncles []*types.Header, receipts []*types.Receipt) (*types.Block, error) {
 	// Accumulate any block and uncle rewards and commit the final state root
 	accumulateRewards(chain.Config(), state, header, uncles)
@@ -398,7 +400,7 @@ func accumulateRewards(config *params.ChainConfig, state *state.StateDB, header 
 在 shared PoW 模式下，使用 shared 的 Seal 函数。
 开启 threads 个 goroutine 进行挖矿(查找符合条件的 nonce 值)。
 
-```
+```go
 // Seal implements consensus.Engine, attempting to find a nonce that satisfies
 // the block's difficulty requirements.
 func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, stop <-chan struct{}) (*types.Block, error) {
@@ -465,14 +467,12 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, stop
 mine 是真正的查找 nonce 值的函数，它不断遍历查找 nonce 值，并计算 PoW 值与目标值进行比较。
 其原理可以简述为下：
 
-```
-								RAND(h, n)  <=  M / d
-```
+```RAND(h, n)  <=  M / d```
 
 这里 M 表示一个极大的数，这里是 2^256-1；d 表示 Header 成员 Difficulty。RAND()是一个概念函数，它代表了一系列复杂的运算，并最终产生一个类似随机的数。这个函数包括两个基本入参：h 是 Header 的哈希值(Header.HashNoNonce())，n 表示 Header 成员 Nonce。整个关系式可以大致理解为，在最大不超过 M 的范围内，以某个方式试图找到一个数，如果这个数符合条件(<=M/d)，那么就认为 Seal()成功。
 由上面的公式可以得知，M 恒定，d 越大则可取范围越小。所以当难度值增加时，挖出区块的难度也在增加。
 
-```
+```go
 func (ethash *Ethash) mine(block *types.Block, id int, seed uint64, abort chan struct{}, found chan *types.Block) {
 	// 从区块头中获取一些数据
 	var (
@@ -537,7 +537,7 @@ search:
 
 上诉函数调用了 hashimotoFull 函数用来计算 PoW 的值。
 
-```
+```go
 func hashimotoFull(dataset []uint32, hash []byte, nonce uint64) ([]byte, []byte) {
 	lookup := func(index uint32) []uint32 {
 		offset := index * hashWords
@@ -557,7 +557,7 @@ hashimoto 用于聚合数据以产生特定的后部的 hash 和 nonce 值。
     待混淆数据完成后，得到一个基本上面目全非的 mix[]，长度为 32 的 uint32 数组。这时，将其折叠(压缩)成一个长度缩小成原长 1/4 的 uint32 数组，折叠的操作方法还是来自 FNV 算法。
 -   最后，将折叠后的 mix[]由长度为 8 的 uint32 型数组直接转化成一个长度 32 的 byte 数组，这就是返回值@digest；同时将之前的 seed[]数组与 digest 合并再取一次 SHA-256 哈希值，得到的长度 32 的 byte 数组，即返回值@result。(转自https://blog.csdn.net/metal1/article/details/79682636)
 
-```
+```go
 func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32) []uint32) ([]byte, []byte) {
 	// 计算理论行数
 	rows := uint32(size / mixBytes)
@@ -603,7 +603,7 @@ func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32)
 
 VerifySeal 用于校验区块的 nonce 值是否满足 PoW 难度要求。
 
-```
+```go
 func (ethash *Ethash) VerifySeal(chain consensus.ChainReader, header *types.Header) error {
 	// ModeFake、ModeFullFake模式不校验，直接验证通过。
 	if ethash.config.PowMode == ModeFake || ethash.config.PowMode == ModeFullFake {
@@ -648,7 +648,7 @@ func (ethash *Ethash) VerifySeal(chain consensus.ChainReader, header *types.Head
 
 hashimotoLight 和 hashimotoFull 功能类似，只是 hashimotoLight 使用了占用内存更小的缓存。
 
-```
+```go
 func hashimotoLight(size uint64, cache []uint32, hash []byte, nonce uint64) ([]byte, []byte) {
 	keccak512 := makeHasher(sha3.NewKeccak512())
 
