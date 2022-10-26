@@ -129,6 +129,13 @@
 
 6. 在 Commit 期间，deliverState 中发生的所有状态转换最终都会写入根 CommitMultiStore，而根 CommitMultiStore 又会提交到磁盘并产生新的应用程序根哈希。这些状态转换现在被认为是最终的。最后，checkState 设置为新提交的状态，deliverState 设置为 nil 以在 BeginBlock 上重置。[see picture](./img/baseapp_state-commit.png)
 
-```
+### 当应用程序接收到消息和查询时，必须将它们路由到适当的模块才能进行处理。路由是通过 BaseApp 完成的，它包含一个用于消息的 msgServiceRouter 和一个用于查询的 grpcQueryRouter。
 
-```
+1. msgServiceRouter:
+    - sdk.Msgs 从交易中提取后需要进行路由，交易是通过 CheckTx 和 DeliverTx ABCI 消息从底层 Tendermint 引擎发送的。为此，BaseApp 拥有一个 msgServiceRouter，它将完全限定的服务方法（字符串，在每个模块的 Protobuf Msg 服务中定义）映射到相应模块的 MsgServer 实现。
+    - BaseApp 中包含的默认 msgServiceRouter 是无状态的。但是，某些应用程序可能希望使用更有状态的路由机制，例如允许治理禁用某些路由或将它们指向新模块以进行升级。出于这个原因，sdk.Context 也被传递到 msgServiceRouter 内部的每个路由处理程序中。对于不想使用它的无状态路由器，您可以忽略 ctx.
+    - 应用程序的 msgServiceRouter 使用应用程序的模块管理器（通过 RegisterServices 方法）使用所有路由进行初始化，该管理器本身使用应用程序构造函数中的所有应用程序模块进行初始化。
+2. grpcQueryRouter
+    - 与 sdk.Msgs 类似，查询需要路由到相应模块的查询服务。为此，BaseApp 拥有一个 grpcQueryRouter，它将模块的完全限定的服务方法（字符串，在它们的 Protobuf Query gRPC 中定义）映射到它们的 QueryServer 实现。 grpcQueryRouter 在查询处理的初始阶段被调用，可以通过直接向 gRPC 端点发送 gRPC 查询，或通过 Tendermint RPC 端点上的 Query ABCI 消息来调用。
+    - 像 msgServiceRouter 一样，grpcQueryRouter 使用应用程序的模块管理器（通过 RegisterServices 方法）使用所有查询路由进行初始化，该管理器本身使用应用程序构造函数中的所有应用程序模块进行初始化。
+3.
