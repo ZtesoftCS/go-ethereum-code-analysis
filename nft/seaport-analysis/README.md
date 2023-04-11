@@ -1,7 +1,5 @@
 # Seaport Analysis
 
-![Seaport](Seaport-banner.png)
-
 - [Seaport Analysis](#seaport-analysis)
   - [概述](#概述)
     - [对比](#对比)
