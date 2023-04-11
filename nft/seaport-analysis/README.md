@@ -112,8 +112,6 @@ graph TD
 
 这里先分析 `order` 的数据结构，一些功能的具体实现后面再详细叙述。
 
-![Seaport](Seaport.order.drawio.svg)
-
 ### 1. offer 和 consideration
 
 目前大多数 NFT 市场只允许一方同意提供 NFT，另一方同意提供支付代币的 listing。Seaport 采取了一种不同的方法：`offerer` 可以同意提供一定数量的 ETH/ERC20/ERC721/ERC1155 项目--这就是 `offer`。为了使该`offer`被接受，`offerer`必须收到一定数量的物品，这就是 `consideration`。
