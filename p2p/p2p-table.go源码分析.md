@@ -16,31 +16,31 @@ Chord、 CAN、 Pastry 等， Kad 通过独特的以异或算法（ XOR）为距
 		bucketSize = 16 // Kademlia bucket size
 		hashBits   = len(common.Hash{}) * 8
 		nBuckets   = hashBits + 1 // Number of buckets
-	
+
 		maxBondingPingPongs = 16
 		maxFindnodeFailures = 5
-	
+
 		autoRefreshInterval = 1 * time.Hour
 		seedCount           = 30
 		seedMaxAge          = 5 * 24 * time.Hour
 	)
-	
+
 	type Table struct {
 		mutex   sync.Mutex        // protects buckets, their content, and nursery
 		buckets [nBuckets]*bucket // index of known nodes by distance
 		nursery []*Node           // bootstrap nodes
 		db      *nodeDB           // database of known nodes
-	
+
 		refreshReq chan chan struct{}
 		closeReq   chan struct{}
 		closed     chan struct{}
-	
+
 		bondmu    sync.Mutex
 		bonding   map[NodeID]*bondproc
 		bondslots chan struct{} // limits total number of active bonding processes
-	
+
 		nodeAddedHook func(*Node) // for testing
-	
+
 		net  transport
 		self *Node // metadata of the local node
 	}
@@ -116,7 +116,7 @@ Chord、 CAN、 Pastry 等， Kad 通过独特的以异或算法（ XOR）为距
 				break loop
 			}
 		}
-	
+
 		if tab.net != nil {
 			tab.net.close()
 		}
@@ -139,7 +139,7 @@ doRefresh函数
 	// doRefresh 随机查找一个目标，以便保持buckets是满的。如果table是空的，那么种子节点会插入。 （比如最开始的启动或者是删除错误的节点之后）
 	func (tab *Table) doRefresh(done chan struct{}) {
 		defer close(done)
-	
+
 		// The Kademlia paper specifies that the bucket refresh should
 		// perform a lookup in the least recently used bucket. We cannot
 		// adhere to this because the findnode target is a 512bit value
@@ -153,7 +153,7 @@ doRefresh函数
 		if len(result) > 0 {  //如果结果不为0 说明表不是空的，那么直接返回。
 			return
 		}
-	
+
 		// The table is empty. Load nodes from the database and insert
 		// them. This should yield a few previously seen nodes that are
 		// (hopefully) still alive.
@@ -167,7 +167,7 @@ doRefresh函数
 		//这里面写死了值。 这个值是通过SetFallbackNodes方法写入的。 这个方法后续会分析。
 		//这里会进行双向的pingpong交流。 然后把结果存储在数据库。
 		seeds = tab.bondall(append(seeds, tab.nursery...))
-	
+
 		if len(seeds) == 0 { //没有种子节点被发现， 可能需要等待下一次刷新。
 			log.Debug("No discv4 seed nodes found")
 		}
@@ -177,14 +177,14 @@ doRefresh函数
 		}
 		tab.mutex.Lock()
 		//这个方法把所有经过bond的seed加入到bucket(前提是bucket未满)
-		tab.stuff(seeds) 
+		tab.stuff(seeds)
 		tab.mutex.Unlock()
-	
+
 		// Finally, do a self lookup to fill up the buckets.
 		tab.lookup(tab.self.ID, false) // 有了种子节点。那么查找自己来填充buckets。
 	}
 
-bondall方法，这个方法就是多线程的调用bond方法。 
+bondall方法，这个方法就是多线程的调用bond方法。
 
 	// bondall bonds with all given nodes concurrently and returns
 	// those nodes for which bonding has probably succeeded.
@@ -217,7 +217,7 @@ bond方法。记得在udp.go中。当我们收到一个ping方法的时候，也
 	// exist. The total number of active bonding processes is limited in
 	// order to restrain network use.
 	// 发送findnode请求之前必须建立一个绑定。	双方为了完成一个bond必须完成双向的ping/pong过程。
-	// 为了节约网路资源。 同时存在的bonding处理流程的总数量是受限的。	
+	// 为了节约网路资源。 同时存在的bonding处理流程的总数量是受限的。
 	// bond is meant to operate idempotently in that bonding with a remote
 	// node which still remembers a previously established bond will work.
 	// The remote node will simply not send a ping back, causing waitping
@@ -241,7 +241,7 @@ bond方法。记得在udp.go中。当我们收到一个ping方法的时候，也
 		if node == nil || fails > 0 || age > nodeDBNodeExpiration {
 			//如果数据库没有这个节点。 或者错误数量大于0或者节点超时。
 			log.Trace("Starting bonding ping/pong", "id", id, "known", node != nil, "failcount", fails, "age", age)
-	
+
 			tab.bondmu.Lock()
 			w := tab.bonding[id]
 			if w != nil {
@@ -283,7 +283,7 @@ pingpong方法
 		// Request a bonding slot to limit network usage
 		<-tab.bondslots
 		defer func() { tab.bondslots <- struct{}{} }()
-	
+
 		// Ping the remote side and wait for a pong.
 		// Ping远程节点。并等待一个pong消息
 		if w.err = tab.ping(id, addr); w.err != nil {
@@ -327,7 +327,7 @@ tab.add方法
 				// The node is already being replaced, don't attempt
 				// to replace it.
 				// 如果别的goroutine正在对这个节点进行测试。 那么取消替换， 直接退出。
-				// 因为ping的时间比较长。所以这段时间是没有加锁的。 用了contested这个状态来标识这种情况。 
+				// 因为ping的时间比较长。所以这段时间是没有加锁的。 用了contested这个状态来标识这种情况。
 				return
 			}
 			oldest.contested = true
@@ -409,7 +409,7 @@ stuff方法比较简单。  找到对应节点应该插入的bucket。 如果这
 			<-tab.refresh()
 			refreshIfEmpty = false
 		}
-	
+
 		for {
 			// ask the alpha closest nodes that we haven't asked yet
 			// 这里会并发的查询，每次3个goroutine并发(通过pendingQueries参数进行控制)
@@ -427,7 +427,7 @@ stuff方法比较简单。  找到对应节点应该插入的bucket。 如果这
 							fails := tab.db.findFails(n.ID) + 1
 							tab.db.updateFindFails(n.ID, fails)
 							log.Trace("Bumping findnode failure counter", "id", n.ID, "failcount", fails)
-	
+
 							if fails >= maxFindnodeFailures {
 								log.Trace("Too many findnode failures, dropping", "id", n.ID, "failcount", fails)
 								tab.delete(n)
@@ -453,7 +453,7 @@ stuff方法比较简单。  找到对应节点应该插入的bucket。 如果这
 		}
 		return result.entries
 	}
-	
+
 	// closest returns the n nodes in the table that are closest to the
 	// given id. The caller must hold tab.mutex.
 	func (tab *Table) closest(target common.Hash, nresults int) *nodesByDistance {
@@ -470,14 +470,14 @@ stuff方法比较简单。  找到对应节点应该插入的bucket。 如果这
 	}
 
 result.push方法，这个方法会根据 所有的节点对于target的距离进行排序。 按照从近到远的方式决定新节点的插入顺序。(队列中最大会包含16个元素)。 这样会导致队列里面的元素和target的距离越来越近。距离相对远的会被踢出队列。
-	
+
 	// nodesByDistance is a list of nodes, ordered by
 	// distance to target.
 	type nodesByDistance struct {
 		entries []*Node
 		target  common.Hash
 	}
-	
+
 	// push adds the given node to the list, keeping the total size below maxElems.
 	func (h *nodesByDistance) push(n *Node, maxElems int) {
 		ix := sort.Search(len(h.entries), func(i int) bool {
@@ -524,7 +524,7 @@ Resolve方法和Lookup方法
 		}
 		return nil
 	}
-	
+
 	// Lookup performs a network search for nodes close
 	// to the given target. It approaches the target by querying
 	// nodes that are closer to it on each iteration.
@@ -561,5 +561,22 @@ SetFallbackNodes方法，这个方法设置初始化的联系节点。 在table�
 
 
 ### 总结
+Kademlia协议是一种分布式哈希表（DHT）协议，广泛应用于各种P2P网络系统中，包括以太坊的一些客户端。它的主要优势和机制如下：
+
+### Kademlia协议的主要优势
+
+1. **效率高**：Kademlia协议可以快速定位到网络中的节点或数据。每次查询都会逐步逼近目标，理论上查询次数与网络大小的对数成正比，这使得即使在大规模网络中也能高效地进行数据查找。
+2. **容错性强**：由于Kademlia使用了分布式的网络结构，没有中心化的控制点，因此对节点的增加和离开具有很强的适应性。网络自我调整以适应变化，增强了容错能力。
+3. **并行查询**：Kademlia允许同时向多个节点发起查询，这不仅提高了查找效率，也增加了对网络延迟和不稳定节点的容忍度。
+4. **去中心化**：作为一个去中心化的网络协议，Kademlia减少了对中央服务器的依赖，增强了网络的隐私性和抗审查能力。
+
+### Kademlia协议的机制
+
+1. **节点ID和距离度量**：Kademlia网络中的每个节点都有一个唯一的ID，通常是通过哈希函数生成的。节点之间的距离是通过异或（XOR）操作计算的，这种距离度量具有对称性和三角不等性，有利于构建高效的路由表。
+2. **路由表**：每个节点维护一个路由表，其中包含了对其他节点的引用。这些引用按照与本节点的距离分布在不同的“桶”中。每个桶存储一定距离范围内的节点信息，随着距离的增加，桶中可能包含的节点数呈指数级增长。
+3. **查找过程**：当一个节点需要查找某个特定ID（可以是另一个节点的ID或数据项的键）时，它会在自己的路由表中找到最接近该ID的几个节点，然后向这些节点发起查询。收到查询的节点再次在自己的路由表中重复这个过程，直到找到目标ID或更接近目标的节点。
+4. **数据存储和检索**：Kademlia网络不仅可以用来查找节点，还可以存储和检索键值对数据。数据项被存储在与数据键最接近的几个节点上，这样当查询某个键时，可以通过类似于查找节点ID的过程来定位存储该数据的节点。
+
+Kademlia协议通过这些机制实现了一个高效、去中心化、可扩展且具有高度容错性的网络系统。这些特性使其成为构建P2P网络和分布式应用的强大基础。
 
 这样， p2p网络的Kademlia协议就完结了。 基本上是按照论文进行实现。 udp进行网络通信。数据库存储链接过的节点。 table实现了Kademlia的核心。 根据异或距离来进行节点的查找。 节点的发现和更新等流程。
