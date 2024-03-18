@@ -5,7 +5,7 @@ Trie树，又称字典树，单词查找树或者前缀树，是一种用于快�
 
 Trie树可以利用字符串的公共前缀来节约存储空间。如下图所示，该trie树用10个节点保存了6个字符串：tea，ten，to，in，inn，int：
 
-![image](picture/trie_1.jpg)
+![image](../picture/trie_1.jpg)
 
 在该trie树中，字符串in，inn和int的公共前缀是“in”，因此可以只存储一份“in”以节省空间。当然，如果系统中存在大量字符串且这些字符串基本没有公共前缀，则相应的trie树将非常消耗内存，这也是trie树的一个缺点。
 
@@ -18,9 +18,9 @@ Trie树的基本性质可以归纳为：
 ## Patricia Tries (前缀树)
 前缀树跟Trie树的不同之处在于Trie树给每一个字符串分配一个节点，这样将使那些很长但又没有公共节点的字符串的Trie树退化成数组。在以太坊里面会由黑客构造很多这种节点造成拒绝服务攻击。前缀树的不同之处在于如果节点公共前缀，那么就使用公共前缀，否则就把剩下的所有节点插入同一个节点。Patricia相对Tire的优化正如下图：
 
-![Optimization of Tire to Patricia](picture/patricia_tire.png)
+![Optimization of Tire to Patricia](../picture/patricia_tire.png)
 
-![image](picture/trie_2.png)
+![image](../picture/trie_2.png)
 
 上图存储的8个Key Value对，可以看到前缀树的特点。
 
@@ -38,7 +38,7 @@ Trie树的基本性质可以归纳为：
 ## Merkle树 (参考 http://blog.csdn.net/wo541075754/article/details/54632929）
 Merkle Tree，通常也被称作Hash Tree，顾名思义，就是存储hash值的一棵树。Merkle树的叶子是数据块(例如，文件或者文件的集合)的hash值。非叶节点是其对应子节点串联字符串的hash。
 
-![image](picture/trie_3.png)
+![image](../picture/trie_3.png)
 
 Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表了整颗树的信息摘要，当树里面任何一个数据发生了变动，都会导致Top Hash的值发生变化。 而Top Hash的值是会存储到区块链的区块头里面去的， 区块头是必须经过工作量证明。 这也就是说我只要拿到一个区块头，就可以对区块信息进行验证。 更加详细的信息请参考那个博客。有详细的介绍。
 
@@ -51,31 +51,31 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 - 状态树(账号信息， 合约账户和用户账户)
 
 下图中是两个区块头，其中state root，tx root receipt root分别存储了这三棵树的树根，第二个区块显示了当账号 175的数据变更(27 -> 45)的时候，只需要存储跟这个账号相关的部分数据，而且老的区块中的数据还是可以正常访问。(这个有点类似与函数式编程语言中的不可变的数据结构的实现)
-![image](picture/trie_4.png)
+![image](../picture/trie_4.png)
 详细结构为
-![world state trie](picture/worldstatetrie.png)
+![world state trie](../picture/worldstatetrie.png)
 
 ## 黄皮书形式化定义(Appendix D. Modified Merkle Patricia Tree)
 
 正式地，我们假设输入值J，包含Key Value对的集合（Key Value都是字节数组）：
-![image](picture/trie_5.png)
+![image](../picture/trie_5.png)
 
 当处理这样一个集合的时候，我们使用下面的这样标识表示数据的 Key和Value(对于J集合中的任意一个I， I0表示Key， I1表示Value)
 
-![image](picture/trie_6.png)
+![image](../picture/trie_6.png)
 
 对于任何特定的字节，我们可以表示为对应的半字节（nibble），其中Y集合在Hex-Prefix Encoding中有说明，意为半字节（4bit）集合（之所以采用半字节，其与后续说明的分支节点branch node结构以及key中编码flag有关）
 
-![image](picture/trie_7.png)
+![image](../picture/trie_7.png)
 
 我们定义了TRIE函数，用来表示树根的HASH值（其中c函数的第二个参数，意为构建完成后树的层数。root的值为0）
 
-![image](picture/trie_8.png)
+![image](../picture/trie_8.png)
 
 我们还定义一个函数n，这个trie的节点函数。 当组成节点时，我们使用RLP对结构进行编码。 作为降低存储复杂度的手段，对于RLP少于32字节的节点，我们直接存储其RLP值， 对于那些较大的，我们存储其HASH节点。
 我们用c来定义节点组成函数：
 
-![image](picture/trie_9.png)
+![image](../picture/trie_9.png)
 
 以类似于基数树的方式，当Trie树从根遍历到叶时，可以构建单个键值对。 Key通过遍历累积，从每个分支节点获取单个半字节（与基数树一样）。 与基数树不同，在共享相同前缀的多个Key的情况下，或者在具有唯一后缀的单个Key的情况下，提供两个优化节点。的情况下，或者在具有唯一后缀的单个密钥的情况下，提供两个优化节点。 因此，当遍历时，可能从其他两个节点类型，扩展和叶中的每一个潜在地获取多个半字节。在Trie树中有三种节点：
 
@@ -86,7 +86,7 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 分支节点只有在需要的时候使用， 对于一个只有一个非空 key value对的Trie树，可能不存在分支节点。 如果使用公式来定义这三种节点， 那么公式如下：
 图中的HP函数代表Hex-Prefix Encoding，是一种半字节编码格式，RLP是使用RLP进行序列化的函数。
 
-![image](picture/trie_10.png)
+![image](../picture/trie_10.png)
 
 对于上图的三种情况的解释
 
@@ -101,7 +101,7 @@ Merkle Tree的主要作用是当我拿到Top Hash的时候，这个hash值代表
 
 它被定义为从一系列半字节（由集合Y表示）与布尔值一起映射到字节序列（由集合B表示）的函数HP：
 
-![image](picture/hp_1.png)
+![image](../picture/hp_1.png)
 
 因此，第一个字节的高半字节包含两个标志; 最低bit位编码了长度的奇偶位，第二低的bit位编码了flag的值。 在偶数个半字节的情况下，第一个字节的低半字节为零，在奇数的情况下为第一个半字节。 所有剩余的半字节（现在是偶数）适合其余的字节。
 
@@ -136,7 +136,7 @@ encoding.go主要处理trie树中的三种编码格式的相互转换的工作�
 		decodeNibbles(hex, buf[1:])
 		return buf
 	}
-	
+
 	func compactToHex(compact []byte) []byte {
 		base := keybytesToHex(compact)
 		base = base[:len(base)-1]
@@ -148,7 +148,7 @@ encoding.go主要处理trie树中的三种编码格式的相互转换的工作�
 		chop := 2 - base[0]&1
 		return base[chop:]
 	}
-	
+
 	func keybytesToHex(str []byte) []byte {
 		l := len(str)*2 + 1
 		var nibbles = make([]byte, l)
@@ -159,7 +159,7 @@ encoding.go主要处理trie树中的三种编码格式的相互转换的工作�
 		nibbles[l-1] = 16
 		return nibbles
 	}
-	
+
 	// hexToKeybytes turns hex nibbles into key bytes.
 	// This can only be used for keys of even length.
 	func hexToKeybytes(hex []byte) []byte {
@@ -173,13 +173,13 @@ encoding.go主要处理trie树中的三种编码格式的相互转换的工作�
 		decodeNibbles(hex, key)
 		return key
 	}
-	
+
 	func decodeNibbles(nibbles []byte, bytes []byte) {
 		for bi, ni := 0, 0; ni < len(nibbles); bi, ni = bi+1, ni+2 {
 			bytes[bi] = nibbles[ni]<<4 | nibbles[ni+1]
 		}
 	}
-	
+
 	// prefixLen returns the length of the common prefix of a and b.
 	func prefixLen(a, b []byte) int {
 		var i, length = 0, len(a)
@@ -193,7 +193,7 @@ encoding.go主要处理trie树中的三种编码格式的相互转换的工作�
 		}
 		return i
 	}
-	
+
 	// hasTerm returns whether a hex key has the terminator flag.
 	func hasTerm(s []byte) bool {
 		return len(s) > 0 && s[len(s)-1] == 16
@@ -207,7 +207,7 @@ node的结构，可以看到node分为4种类型， fullNode对应了黄皮书�
 		cache() (hashNode, bool)
 		canUnload(cachegen, cachelimit uint16) bool
 	}
-	
+
 	type (
 		fullNode struct {
 			Children [17]node // Actual trie node data to encode/decode (needs custom encoder)
@@ -233,7 +233,7 @@ trie的结构， root包含了当前的root节点， db是后端的KV存储，tr
 		root         node
 		db           Database
 		originalRoot common.Hash
-	
+
 		// Cache generation values.
 		// cachegen increases by one with each commit operation.
 		// new nodes are tagged with the current generation and unloaded
@@ -262,7 +262,7 @@ Trie树的初始化调用New函数，函数接受一个hash值和一个Database�
 
 Trie树的插入，这是一个递归调用的方法，从根节点开始，一直往下找，直到找到可以插入的点，进行插入操作。参数node是当前插入的节点， prefix是当前已经处理完的部分key， key是还没有处理玩的部分key,  完整的key = prefix + key。 value是需要插入的值。 返回值bool是操作是否改变了Trie树(dirty)，node是插入完成后的子树的根节点， error是错误信息。
 
-- 如果节点类型是nil(一颗全新的Trie树的节点就是nil的),这个时候整颗树是空的，直接返回shortNode{key, value, t.newFlag()}， 这个时候整颗树的跟就含有了一个shortNode节点。 
+- 如果节点类型是nil(一颗全新的Trie树的节点就是nil的),这个时候整颗树是空的，直接返回shortNode{key, value, t.newFlag()}， 这个时候整颗树的跟就含有了一个shortNode节点。
 - 如果当前的根节点类型是shortNode(也就是叶子节点)，首先计算公共前缀，如果公共前缀就等于key，那么说明这两个key是一样的，如果value也一样的(dirty == false)，那么返回错误。 如果没有错误就更新shortNode的值然后返回。如果公共前缀不完全匹配，那么就需要把公共前缀提取出来形成一个独立的节点(扩展节点),扩展节点后面连接一个branch节点，branch节点后面看情况连接两个short节点。首先构建一个branch节点(branch := &fullNode{flags: t.newFlag()}),然后再branch节点的Children位置调用t.insert插入剩下的两个short节点。这里有个小细节，key的编码是HEX encoding,而且末尾带了一个终结符。考虑我们的根节点的key是abc0x16，我们插入的节点的key是ab0x16。下面的branch.Children[key[matchlen]]才可以正常运行，0x16刚好指向了branch节点的第17个孩子。如果匹配的长度是0，那么直接返回这个branch节点，否则返回shortNode节点作为前缀节点。
 - 如果当前的节点是fullNode(也就是branch节点)，那么直接往对应的孩子节点调用insert方法,然后把对应的孩子节点只想新生成的节点。
 - 如果当前节点是hashNode, hashNode的意思是当前节点还没有加载到内存里面来，还是存放在数据库里面，那么首先调用 t.resolveHash(n, prefix)来加载到内存，然后对加载出来的节点调用insert方法来进行插入。
@@ -306,7 +306,7 @@ Trie树的插入，这是一个递归调用的方法，从根节点开始，一�
 			}
 			// Otherwise, replace it with a short node leading up to the branch.
 			return true, &shortNode{key[:matchlen], branch, t.newFlag()}, nil
-	
+
 		case *fullNode:
 			dirty, nn, err := t.insert(n.Children[key[0]], append(prefix, key[0]), key[1:], value)
 			if !dirty || err != nil {
@@ -316,10 +316,10 @@ Trie树的插入，这是一个递归调用的方法，从根节点开始，一�
 			n.flags = t.newFlag()
 			n.Children[key[0]] = nn
 			return true, n, nil
-	
+
 		case nil:
 			return true, &shortNode{key, value, t.newFlag()}, nil
-	
+
 		case hashNode:
 			// We've hit a part of the trie that isn't loaded yet. Load
 			// the node and insert into it. This leaves all child nodes on
@@ -333,7 +333,7 @@ Trie树的插入，这是一个递归调用的方法，从根节点开始，一�
 				return false, rn, err
 			}
 			return true, nn, nil
-	
+
 		default:
 			panic(fmt.Sprintf("%T: invalid node: %v", n, n))
 		}
@@ -388,9 +388,9 @@ Trie树的Delete方法，暂时不介绍，代码根插入比较类似
 
 Trie的序列化主要才作用了前面介绍的Compat Encoding和 RLP编码格式。 序列化的结构在黄皮书里面有详细的介绍。
 
-![image](picture/trie_8.png)
-![image](picture/trie_9.png)
-![image](picture/trie_10.png)
+![image](../picture/trie_8.png)
+![image](../picture/trie_9.png)
+![image](../picture/trie_10.png)
 
 Trie树的使用方法在trie_test.go里面有比较详细的参考。 这里我列出一个简单的使用流程。首先创建一个空的Trie树，然后插入一些数据，最后调用trie.Commit()方法进行序列化并得到一个hash值(root), 也就是上图中的KEC(c(J,0))或者是TRIE(J)。
 
@@ -426,7 +426,7 @@ Trie树的使用方法在trie_test.go里面有比较详细的参考。 这里我
 		t.cachegen++
 		return common.BytesToHash(hash.(hashNode)), nil
 	}
-	
+
 	func (t *Trie) hashRoot(db DatabaseWriter) (node, node, error) {
 		if t.root == nil {
 			return hashNode(emptyRoot.Bytes()), nil, nil
@@ -444,7 +444,7 @@ Trie树的使用方法在trie_test.go里面有比较详细的参考。 这里我
 返回值说明， cache变量包含了原有的node节点，并且包含了node节点的hash值。 hash变量返回了当前节点的hash值(这个值其实是根据node和node的所有子节点计算出来的)。
 
 有一个小细节： 根节点调用hash函数的时候， force参数是为true的，其他的子节点调用的时候force参数是为false的。 force参数的用途是当||c(J,i)||<32的时候也对c(J,i)进行hash计算，这样保证无论如何也会对根节点进行Hash计算。
-	
+
 	// hash collapses a node down into a hash node, also returning a copy of the
 	// original node initialized with the computed hash to replace the original one.
 	func (h *hasher) hash(n node, db DatabaseWriter, force bool) (node, node, error) {
@@ -504,14 +504,14 @@ hashChildren方法,这个方法把所有的子节点替换成他们的hash，可
 	// as a replacement for the original node with the child hashes cached in.
 	func (h *hasher) hashChildren(original node, db DatabaseWriter) (node, node, error) {
 		var err error
-	
+
 		switch n := original.(type) {
 		case *shortNode:
 			// Hash the short node's child, caching the newly hashed subtree
 			collapsed, cached := n.copy(), n.copy()
 			collapsed.Key = hexToCompact(n.Key)
 			cached.Key = common.CopyBytes(n.Key)
-	
+
 			if _, ok := n.Val.(valueNode); !ok {
 				collapsed.Val, cached.Val, err = h.hash(n.Val, db, false)
 				if err != nil {
@@ -522,11 +522,11 @@ hashChildren方法,这个方法把所有的子节点替换成他们的hash，可
 				collapsed.Val = valueNode(nil) // Ensure that nil children are encoded as empty strings.
 			}
 			return collapsed, cached, nil
-	
+
 		case *fullNode:
 			// Hash the full node's children, caching the newly hashed subtrees
 			collapsed, cached := n.copy(), n.copy()
-	
+
 			for i := 0; i < 16; i++ {
 				if n.Children[i] != nil {
 					collapsed.Children[i], cached.Children[i], err = h.hash(n.Children[i], db, false)
@@ -542,7 +542,7 @@ hashChildren方法,这个方法把所有的子节点替换成他们的hash，可
 				collapsed.Children[16] = valueNode(nil)
 			}
 			return collapsed, cached, nil
-	
+
 		default:
 			// Value and hash nodes don't have children so they're left as were
 			return n, original, nil
@@ -564,7 +564,7 @@ store方法，如果一个node的所有子节点都替换成了子节点的hash�
 		if err := rlp.Encode(h.tmp, n); err != nil {
 			panic("encode error: " + err.Error())
 		}
-	
+
 		if h.tmp.Len() < 32 && !force {
 			return n, nil // Nodes smaller than 32 bytes are stored inside their parent
 		}
@@ -586,7 +586,7 @@ Trie的反序列化过程。还记得之前创建Trie树的流程么。 如果�
 
 	func (t *Trie) resolveHash(n hashNode, prefix []byte) (node, error) {
 		cacheMissCounter.Inc(1)
-	
+
 		enc, err := t.db.Get(n)
 		if err != nil || enc == nil {
 			return nil, &MissingNodeError{NodeHash: common.BytesToHash(n), Path: prefix}
@@ -678,7 +678,7 @@ decodeRef方法根据数据类型进行解析，如果类型是list，那么有�
 
 decodeFull方法。根decodeShort方法的流程差不多。
 
-	
+
 	func decodeFull(hash, buf, elems []byte, cachegen uint16) (*fullNode, error) {
 		n := &fullNode{flags: nodeFlag{hash: hash, gen: cachegen}}
 		for i := 0; i < 16; i++ {
@@ -701,7 +701,7 @@ decodeFull方法。根decodeShort方法的流程差不多。
 
 ### Trie树的cache管理
 Trie树的cache管理。 还记得Trie树的结构里面有两个参数， 一个是cachegen,一个是cachelimit。这两个参数就是cache控制的参数。 Trie树每一次调用Commit方法，会导致当前的cachegen增加1。
-	
+
 	func (t *Trie) CommitTo(db DatabaseWriter) (root common.Hash, err error) {
 		hash, cached, err := t.hashRoot(db)
 		if err != nil {
@@ -750,12 +750,12 @@ canUnload方法是一个接口，不同的node调用不同的方法。
 	func (n *nodeFlag) canUnload(cachegen, cachelimit uint16) bool {
 		return !n.dirty && cachegen-n.gen >= cachelimit
 	}
-	
+
 	func (n *fullNode) canUnload(gen, limit uint16) bool  { return n.flags.canUnload(gen, limit) }
 	func (n *shortNode) canUnload(gen, limit uint16) bool { return n.flags.canUnload(gen, limit) }
 	func (n hashNode) canUnload(uint16, uint16) bool      { return false }
 	func (n valueNode) canUnload(uint16, uint16) bool     { return false }
-	
+
 	func (n *fullNode) cache() (hashNode, bool)  { return n.flags.hash, n.flags.dirty }
 	func (n *shortNode) cache() (hashNode, bool) { return n.flags.hash, n.flags.dirty }
 	func (n hashNode) cache() (hashNode, bool)   { return nil, true }
@@ -765,7 +765,7 @@ canUnload方法是一个接口，不同的node调用不同的方法。
 主要提供两个方法，Prove方法获取指定Key的proof证明， proof证明是从根节点到叶子节点的所有节点的hash值列表。 VerifyProof方法，接受一个roothash值和proof证明和key来验证key是否存在。
 
 Prove方法，从根节点开始。把经过的节点的hash值一个一个存入到list中。然后返回。
-	
+
 	// Prove constructs a merkle proof for key. The result contains all
 	// encoded nodes on the path to the value at key. The value itself is
 	// also included in the last node and can be retrieved by verifying
@@ -864,7 +864,7 @@ VerifyProof方法，接收一个rootHash参数，key参数，和proof数组， �
 		}
 		return nil, errors.New("unexpected end of proof")
 	}
-	
+
 	func get(tn node, key []byte) ([]byte, node) {
 		for {
 			switch n := tn.(type) {
@@ -912,7 +912,7 @@ VerifyProof方法，接收一个rootHash参数，key参数，和proof数组， �
 		trie.SetCacheLimit(cachelimit)
 		return &SecureTrie{trie: *trie}, nil
 	}
-	
+
 	// Get returns the value for key stored in the trie.
 	// The value bytes must not be modified by the caller.
 	func (t *SecureTrie) Get(key []byte) []byte {
@@ -922,7 +922,7 @@ VerifyProof方法，接收一个rootHash参数，key参数，和proof数组， �
 		}
 		return res
 	}
-	
+
 	// TryGet returns the value for key stored in the trie.
 	// The value bytes must not be modified by the caller.
 	// If a node was not found in the database, a MissingNodeError is returned.
