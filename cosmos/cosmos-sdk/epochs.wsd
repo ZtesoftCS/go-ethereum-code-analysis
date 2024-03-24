@@ -1,0 +1,16 @@
+@startuml
+skinparam monochrome true
+
+start
+:BeginBlock\n(ABCI);
+if (Is New Epoch Starting?) then (yes)
+    :BeforeEpochStart\n(Evmos);
+endif
+:Block Operations;
+:EndBlock\n(ABCI);
+if (Is Epoch Ending?) then (yes)
+    :AfterEpochEnd\n(Evmos);
+endif
+
+stop
+@enduml
