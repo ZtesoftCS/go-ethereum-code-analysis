@@ -33,6 +33,7 @@ func(pm *ProtocolManager) Start()
 
 第一层处于pkg eth中，可以直接被eth.Ethereum，eth.ProtocolManager等顶层管理模块使用，在类型声明上也明显考虑了eth.Ethereum的使用特点。典型的有eth.peer{}, eth.peerSet{}，其中peerSet是peer的集合类型，而eth.peer代表了远端通信对象和其所有通信操作，它封装更底层的p2p.Peer对象以及读写通道等。
 第二层属于pkg p2p，可认为是泛化的p2p通信结构，比较典型的结构类型包括代表远端通信对象的p2p.Peer{}, 封装自更底层连接对象的conn{}，通信用通道对象protoRW{}, 以及启动监听、处理新加入连接或断开连接的Server{}。这一层中，各种数据类型的界限比较清晰，尽量不出现揉杂的情况，这也是泛化结构的需求。值得关注的是p2p.Protocol{}，它应该是针对上层应用特意开辟的类型，主要作用包括容纳应用程序所要求的回调函数等，并通过p2p.Server{}在新连接建立后，将其传递给通信对象peer。从这个类型所起的作用来看，命名为Protocol还是比较贴切的，尽管不应将其与TCP/IP协议等既有概念混淆。
+
 第三层处于golang自带的网络代码包中，也可分为两部分：第一部分pkg net，包括代表网络连接的<Conn>接口，代表网络地址的<Addr>以及它们的实现类；第二部分pkg syscall，包括更底层的网络相关系统调用类等，可视为封装了网络层(IP)和传输层(TCP)协议的系统实现。
 
 ```
